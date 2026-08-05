@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Calendar</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #333333; }
+    .header { background: white; padding: 20px 30px; border-bottom: 2px solid #6a25a0; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 24px; font-weight: 600; color: #6a25a0; }
+    .tabs { display: flex; gap: 30px; border-bottom: 1px solid #e0e0e0; background: white; padding: 0 30px; }
+    .tab { padding: 15px 0; cursor: pointer; font-weight: 500; color: #999999; border-bottom: 3px solid transparent; transition: all 0.2s; }
+    .tab:hover { color: #6a25a0; }
+    .tab.active { color: #6a25a0; border-bottom-color: #6a25a0; }
+    .btn { background: #6a25a0; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .btn:hover { background: #5a1a90; }
+    .main { padding: 20px; max-width: 1600px; margin: 0 auto; }
+    .section { background: white; padding: 25px; border: 1px solid #e0e0e0; border-radius: 8px; display: none; }
+    .section.active { display: block; }
+    .section h2 { font-size: 18px; font-weight: 600; margin-bottom: 20px; color: #6a25a0; }
+    .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .nav-btn { background: #f5f5f5; border: 1px solid #ddd; width: 36px; height: 36px; cursor: pointer; border-radius: 4px; font-size: 16px; }
+    .nav-btn:hover { background: #e0e0e0; }
+    .cal-header h2 { margin: 0; min-width: 180px; text-align: center; font-size: 18px; font-weight: 600; }
+    .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .weekday { text-align: center; font-size: 12px; font-weight: 600; color: #666; padding: 10px 0; text-transform: uppercase; }
+    .day { border: 1px solid #e0e0e0; padding: 8px; min-height: 80px; cursor: pointer; background: white; border-radius: 6px; display: flex; flex-direction: column; font-size: 12px; transition: all 0.2s; color: #333333; }
+    .day:hover { border-color: #6a25a0; }
+    .day.other { background: #f5f5f5; opacity: 0.5; cursor: default; }
+    .day.today { border: 2px solid #6a25a0; }
+    .day-num { font-weight: 700; margin-bottom: 6px; font-size: 18px; color: #6a25a0; }
+    .events-list { width: 100%; overflow-x: auto; }
+    .events-table { width: 100%; border-collapse: collapse; }
+    .events-table th { background: #6a25a0; padding: 16px; text-align: left; font-size: 13px; font-weight: 700; color: white; border-bottom: 2px solid #6a25a0; white-space: nowrap; }
+    .events-table td { padding: 16px; border-bottom: 1px solid #e0e0e0; font-size: 13px; color: #333333; }
+    .events-table tr:nth-child(odd) { background: #f9f3ff; }
+    .events-table tr:nth-child(even) { background: white; }
+    .events-table tr:hover { background: #f0e6ff; }
+    .events-table tr { cursor: pointer; transition: all 0.2s; }
+    .empty { text-align: center; padding: 40px 20px; color: #999999; }
+    .loading { text-align: center; padding: 40px 20px; color: #999999; }
+    .error { text-align: center; padding: 40px 20px; color: #d00; background: #fee; border: 1px solid #fcc; border-radius: 4px; }
+
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 1000; justify-content: center; align-items: center; cursor: pointer; }
+    .modal.active { display: flex; }
+    .modal-box { cursor: default; background: white; border: 1px solid #e0e0e0; border-radius: 8px; max-width: 900px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .modal-header { padding: 25px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h2 { font-size: 20px; font-weight: 600; margin: 0; color: #6a25a0; }
+    .modal-close { background: none; border: none; font-size: 28px; cursor: pointer; color: #999999; }
+    .form-section { padding: 25px; }
+    .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .form-grid.full { grid-template-columns: 1fr; }
+    .form-field { margin-bottom: 0; }
+    .form-field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+    .form-field input, .form-field select, .form-field textarea { width: 100%; border: 1px solid #ddd; padding: 10px; font-family: inherit; font-size: 14px; border-radius: 6px; background: white; color: #333333; }
+    .form-field input:focus, .form-field select:focus, .form-field textarea:focus { outline: none; border-color: #6a25a0; background: #f9f3ff; }
+    .form-field textarea { min-height: 80px; resize: vertical; }
+    .form-links-section { background: #f5f5f5; border-top: 1px solid #e0e0e0; padding: 20px 25px; }
+    .form-links-title { font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #6a25a0; }
+    .form-links-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .modal-footer { display: flex; gap: 12px; padding: 25px; border-top: 1px solid #e0e0e0; background: #f5f5f5; }
+    .btn-primary { background: #6a25a0; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; flex: 1; }
+    .btn-primary:hover { background: #5a1a90; }
+    .btn-secondary { background: #f5f5f5; color: #6a25a0; border: 1px solid #6a25a0; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; flex: 1; }
+    .btn-secondary:hover { background: #f0e6ff; }
+    .details { padding: 25px; }
+    .detail-row { padding: 10px 0; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; }
+    .detail-label { font-weight: 600; color: #666; }
+    .detail-value { color: #1a1a1a; }
+    .detail-links { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; }
+    .detail-links h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+    .detail-link { display: block; padding: 8px 0; color: #0066cc; text-decoration: none; }
+    .detail-link:hover { text-decoration: underline; }
+    .detail-link.empty { color: #999; cursor: default; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div style="background: #6a25a0; padding: 8px 12px; border-radius: 6px; height: 50px; display: flex; align-items: center;">
+      <img src="logo-allwhite.png" alt="Market Leaders" style="height: 100%; max-width: 150px; object-fit: contain;">
+    </div>
+    <button class="btn" id="addEventBtn" onclick="openModal('addModal')">Add Event</button>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('calendar')">Event Calendar</div>
+    <div class="tab" onclick="switchTab('events')">All Events</div>
+    <div class="tab" onclick="switchTab('priorities')">Top Priorities</div>
+    <div class="tab" onclick="switchTab('campaign')">Campaign Assets</div>
+    <div class="tab" onclick="switchTab('adstats')">Ad Account Stats</div>
+  </div>
+
+  <div class="main">
+    <div id="calendar-section" class="section active">
+      <div class="cal-header">
+        <button class="nav-btn" onclick="prevMonth()">&larr;</button>
+        <h2 id="monthYear"></h2>
+        <button class="nav-btn" onclick="nextMonth()">&rarr;</button>
+      </div>
+      <div class="calendar" id="calendar"><div class="loading">Loading calendar...</div></div>
+    </div>
+
+    <div id="events-section" class="section">
+      <h2>All Events</h2>
+      <div style="background: #f9f3ff; padding: 20px; border-radius: 8px; border: 1px solid #e0d4f0; margin-bottom: 25px; display: flex; gap: 20px; flex-wrap: wrap;">
+        <div>
+          <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 8px; color: #6a25a0;">Filter by Client</label>
+          <select id="filterClient" onchange="applyFilters()" style="padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+            <option value="">All Clients</option>
+            <option value="client_1">Market Leaders</option>
+            <option value="client_2">Maverick</option>
+            <option value="client_3">Dee Kay</option>
+            <option value="client_4">Nicholas</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 8px; color: #6a25a0;">Filter by Status</label>
+          <select id="filterStatus" onchange="applyFilters()" style="padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+            <option value="">All Status</option>
+            <option value="Scheduled">Scheduled</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+      <div class="events-list" id="eventsList"><div class="loading">Loading events...</div></div>
+    </div>
+
+    <div id="priorities-section" class="section">
+      <h2>Top Priorities</h2>
+      <div class="empty">Coming Soon</div>
+    </div>
+
+    <div id="campaign-section" class="section">
+      <h2>Campaign Assets</h2>
+      <div class="empty">Coming Soon</div>
+    </div>
+
+    <div id="adstats-section" class="section">
+      <h2>Ad Account Stats</h2>
+      <div class="empty">Coming Soon</div>
+    </div>
+  </div>
+
+  <div id="addModal" class="modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="modalTitle">Add Event</h2>
+        <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
+      </div>
+      <form id="form" onsubmit="saveEvent(event)">
+        <div class="form-section">
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Seminar Date *</label>
+              <input type="date" id="f_date" required oninput="updateDayDisplay()">
+            </div>
+            <div class="form-field">
+              <label>Day</label>
+              <input type="text" id="f_day" readonly style="background: #f5f5f5; cursor: not-allowed;">
+            </div>
+            <div class="form-field">
+              <label>Time (Start)</label>
+              <input type="time" id="f_time_start">
+            </div>
+            <div class="form-field">
+              <label>Time (End)</label>
+              <input type="time" id="f_time_end">
+            </div>
+            <div class="form-field">
+              <label>Client</label>
+              <select id="f_client" onchange="updateCampaignField()"><option value="">Select</option></select>
+            </div>
+            <div class="form-field">
+              <label>Campaign</label>
+              <select id="f_campaign_select" style="display: none;" onchange="onCampaignSelectChange()"></select>
+              <input type="text" id="f_campaign_name" placeholder="Type campaign name" style="display: none;">
+            </div>
+            <div class="form-field">
+              <label>Venue</label>
+              <input type="text" id="f_venue">
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-top: 20px;">
+            <div class="form-field">
+              <label>Status</label>
+              <select id="f_status">
+                <option value="Scheduled">Scheduled</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Campaign Launch Date</label>
+              <input type="date" id="f_campaign">
+            </div>
+            <div class="form-field"></div>
+            <div class="form-field"></div>
+          </div>
+
+          <div class="form-grid" style="margin-top: 20px;">
+            <div class="form-field">
+              <label>Lead Goal</label>
+              <input type="number" id="f_goal" oninput="calcPct()">
+            </div>
+            <div class="form-field">
+              <label>Actual Leads</label>
+              <input type="number" id="f_actual" oninput="calcPct()">
+            </div>
+            <div class="form-field">
+              <label>% of Goal (auto)</label>
+              <input type="number" id="f_pct" readonly style="background: #f5f5f5; cursor: not-allowed;">
+            </div>
+            <div class="form-field"></div>
+          </div>
+
+          <div class="form-grid" style="margin-top: 20px;">
+            <div class="form-field">
+              <label>Attendance</label>
+              <input type="number" id="f_attend" oninput="calcShowRate()">
+            </div>
+            <div class="form-field">
+              <label>Show Rate (%) (auto)</label>
+              <input type="number" id="f_rate" min="0" max="100" readonly style="background: #f5f5f5; cursor: not-allowed;">
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-top: 20px;">
+            <div class="form-field" style="grid-column: 1 / -1;">
+              <label>Remarks</label>
+              <textarea id="f_remarks" style="min-height: 100px;"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-links-section">
+          <div class="form-links-title">Quick Links (optional - can be added later)</div>
+          <div class="form-links-grid">
+            <div class="form-field">
+              <label>Google Drive</label>
+              <input type="url" id="f_drive">
+            </div>
+            <div class="form-field">
+              <label>CRM (Sheets)</label>
+              <input type="url" id="f_crm">
+            </div>
+            <div class="form-field">
+              <label>GHL</label>
+              <input type="url" id="f_ghl">
+            </div>
+            <div class="form-field">
+              <label>n8n</label>
+              <input type="url" id="f_n8n">
+            </div>
+            <div class="form-field">
+              <label>Zoom Register Link</label>
+              <input type="url" id="f_zoom">
+            </div>
+            <div class="form-field">
+              <label>Ad Creatives</label>
+              <input type="url" id="f_ad_creatives">
+            </div>
+            <div class="form-field">
+              <label>Ad Copies</label>
+              <input type="url" id="f_ad_copies">
+            </div>
+            <div class="form-field">
+              <label>Landing Page</label>
+              <input type="url" id="f_landing_page">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn-primary">Save</button>
+          <button type="button" class="btn-secondary" id="deleteBtn" style="display:none;" onclick="deleteEvent()">Delete</button>
+          <button type="button" class="btn-secondary" onclick="closeModal('addModal')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="detailsModal" class="modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2>Event Details</h2>
+        <button class="modal-close" onclick="closeModal('detailsModal')">&times;</button>
+      </div>
+      <div id="detailsContent" class="details"></div>
+    </div>
+  </div>
+
+  <div id="dateEventsModal" class="modal">
+    <div class="modal-box" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2 id="dateEventsTitle"></h2>
+        <button class="modal-close" onclick="closeModal('dateEventsModal')">&times;</button>
+      </div>
+      <div id="dateEventsContent" class="details" style="padding: 25px;"></div>
+      <div class="modal-footer">
+        <button class="btn-primary" id="addEventBtn" style="flex: 1;">Add Event</button>
+        <button class="btn-secondary" onclick="closeModal('dateEventsModal')" style="flex: 1;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase v9 - Compatible with script tags -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const CLIENTS = {
+      client_1: { name: 'Market Leaders', color: '#9b59b6' },
+      client_2: { name: 'Maverick', color: '#f1c40f' },
+      client_3: { name: 'Dee Kay', color: '#d4c4a8' },
+      client_4: { name: 'Nicholas', color: '#1e3a5f' }
+    };
+
+    const CLIENT_CAMPAIGNS = {
+      client_1: null, // Market Leaders - custom
+      client_2: ['Raising Future Ready Teens'],
+      client_3: ['1K a Day Webinar'],
+      client_4: ['Estate Planning Seminar', 'Dementia Talk', 'CPF Collab Talk']
+    };
+
+    const config = {
+      apiKey: "AIzaSyCyfhpy_tAUAs5I6oLjLY8FWUcoZ3aGY8E",
+      authDomain: "market-leaders-webpage.firebaseapp.com",
+      projectId: "market-leaders-webpage",
+      storageBucket: "market-leaders-webpage.firebasestorage.app",
+      messagingSenderId: "687744393786",
+      appId: "1:687744393786:web:98a6137b8a258eec564b03"
+    };
+
+    let db;
+    let currentDate = new Date();
+    let events = [];
+    let editId = null;
+    let filterStatus = '';
+    let filterClient = '';
+    let sortColumn = 'date';
+    let sortOrder = 'asc';
+
+    // Properly wait for Firebase to be available
+    async function initFirebase() {
+      return new Promise((resolve, reject) => {
+        // Check if Firebase is already loaded
+        if (typeof firebase !== 'undefined') {
+          console.log('Firebase found, initializing...');
+          try {
+            if (firebase.apps.length === 0) {
+              firebase.initializeApp(config);
+            }
+            db = firebase.firestore();
+            console.log('Firebase initialized successfully');
+            resolve();
+          } catch (e) {
+            console.error('Firebase init error:', e);
+            reject(e);
+          }
+          return;
+        }
+
+        // Wait for Firebase to load (max 10 seconds)
+        let attempts = 0;
+        const interval = setInterval(() => {
+          attempts++;
+          console.log('Waiting for Firebase... attempt', attempts);
+          if (typeof firebase !== 'undefined') {
+            clearInterval(interval);
+            try {
+              if (firebase.apps.length === 0) {
+                firebase.initializeApp(config);
+              }
+              db = firebase.firestore();
+              console.log('Firebase initialized successfully');
+              resolve();
+            } catch (e) {
+              console.error('Firebase init error:', e);
+              reject(e);
+            }
+          } else if (attempts > 100) {
+            clearInterval(interval);
+            reject(new Error('Firebase failed to load after 10 seconds'));
+          }
+        }, 100);
+      });
+    }
+
+    async function loadData() {
+      try {
+        const cs = await db.collection('clients').get();
+        const existingClients = [];
+        cs.forEach(d => {
+          existingClients.push({ id: d.id, ...d.data() });
+        });
+
+        if (existingClients.length === 0) {
+          console.log('Creating default clients...');
+          for (const id in CLIENTS) {
+            await db.collection('clients').doc(id).set(CLIENTS[id]);
+          }
+        }
+
+        const es = await db.collection('events').get();
+        events = [];
+        es.forEach(d => {
+          const data = d.data();
+          events.push({
+            id: d.id,
+            ...data,
+            date: data.date?.toDate?.() || new Date(data.date),
+            campaign: data.campaign ? (data.campaign?.toDate?.() || new Date(data.campaign)) : null
+          });
+        });
+
+        console.log('Data loaded: ' + existingClients.length + ' clients, ' + events.length + ' events');
+        initUI();
+        render();
+      } catch (e) {
+        console.error('Load data error:', e);
+        showError('Error loading data: ' + e.message);
+      }
+    }
+
+    function initUI() {
+      const sel = document.getElementById('f_client');
+      sel.innerHTML = '<option value="">Select</option>';
+      for (const id in CLIENTS) {
+        const o = document.createElement('option');
+        o.value = id;
+        o.text = CLIENTS[id].name;
+        sel.appendChild(o);
+      }
+    }
+
+    function calcPct() {
+      const goal = parseInt(document.getElementById('f_goal').value) || 0;
+      const actual = parseInt(document.getElementById('f_actual').value) || 0;
+      const pct = goal > 0 ? (actual / goal * 100).toFixed(1) : 0;
+      document.getElementById('f_pct').value = pct;
+    }
+
+    function calcShowRate() {
+      const actual = parseInt(document.getElementById('f_actual').value) || 0;
+      const attend = parseInt(document.getElementById('f_attend').value) || 0;
+      const rate = actual > 0 ? (attend / actual * 100).toFixed(1) : 0;
+      document.getElementById('f_rate').value = rate;
+    }
+
+    function updateDayDisplay() {
+      const dateInput = document.getElementById('f_date').value;
+      if (dateInput) {
+        const date = new Date(dateInput);
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayName = days[date.getDay()];
+        document.getElementById('f_day').value = dayName;
+      } else {
+        document.getElementById('f_day').value = '';
+      }
+    }
+
+    function updateCampaignField() {
+      const clientId = document.getElementById('f_client').value;
+      const selectEl = document.getElementById('f_campaign_select');
+      const inputEl = document.getElementById('f_campaign_name');
+
+      if (!clientId) {
+        selectEl.style.display = 'none';
+        inputEl.style.display = 'none';
+        return;
+      }
+
+      const campaigns = CLIENT_CAMPAIGNS[clientId];
+
+      if (campaigns === null) { // Market Leaders - custom only
+        selectEl.style.display = 'none';
+        inputEl.style.display = 'block';
+        inputEl.placeholder = 'Type custom campaign name';
+        inputEl.value = '';
+      } else { // Predefined campaigns + custom option
+        selectEl.innerHTML = '<option value="">Select campaign</option>';
+        campaigns.forEach(campaign => {
+          const opt = document.createElement('option');
+          opt.value = campaign;
+          opt.text = campaign;
+          selectEl.appendChild(opt);
+        });
+        // Add custom option
+        const customOpt = document.createElement('option');
+        customOpt.value = '__custom__';
+        customOpt.text = '+ Add Custom Campaign';
+        selectEl.appendChild(customOpt);
+        selectEl.style.display = 'block';
+        inputEl.style.display = 'none';
+        inputEl.value = '';
+        selectEl.value = '';
+      }
+    }
+
+    function onCampaignSelectChange() {
+      const selectEl = document.getElementById('f_campaign_select');
+      const inputEl = document.getElementById('f_campaign_name');
+
+      if (selectEl.value === '__custom__') {
+        selectEl.style.display = 'none';
+        inputEl.style.display = 'block';
+        inputEl.focus();
+        inputEl.value = '';
+      }
+    }
+
+    function getCampaignValue() {
+      const clientId = document.getElementById('f_client').value;
+      const campaigns = CLIENT_CAMPAIGNS[clientId];
+      if (campaigns === null) {
+        return document.getElementById('f_campaign_name').value;
+      } else {
+        return document.getElementById('f_campaign_select').value;
+      }
+    }
+
+    function setCampaignValue(value) {
+      const clientId = document.getElementById('f_client').value;
+      const campaigns = CLIENT_CAMPAIGNS[clientId];
+      if (campaigns === null) {
+        document.getElementById('f_campaign_name').value = value || '';
+      } else {
+        document.getElementById('f_campaign_select').value = value || '';
+      }
+    }
+
+    function render() {
+      renderCal();
+      renderList();
+    }
+
+    function renderCal() {
+      const y = currentDate.getFullYear();
+      const m = currentDate.getMonth();
+      document.getElementById('monthYear').textContent = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+      const first = new Date(y, m, 1).getDay();
+      const days = new Date(y, m + 1, 0).getDate();
+      const prevDays = new Date(y, m, 0).getDate();
+
+      const cal = document.getElementById('calendar');
+      cal.innerHTML = '';
+
+      ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => {
+        const div = document.createElement('div');
+        div.className = 'weekday';
+        div.textContent = d;
+        cal.appendChild(div);
+      });
+
+      for (let i = first - 1; i >= 0; i--) {
+        const d = document.createElement('div');
+        d.className = 'day other';
+        d.innerHTML = `<div class="day-num">${prevDays - i}</div>`;
+        cal.appendChild(d);
+      }
+
+      for (let day = 1; day <= days; day++) {
+        const date = new Date(y, m, day);
+        const d = document.createElement('div');
+        d.className = 'day';
+
+        if (date.toDateString() === new Date().toDateString()) {
+          d.classList.add('today');
+        }
+
+        d.innerHTML = `<div class="day-num">${day}</div>`;
+
+        const evs = events.filter(e => new Date(e.date).toDateString() === date.toDateString());
+        if (evs.length > 0) {
+          const ed = document.createElement('div');
+          ed.style.flex = '1';
+          ed.style.display = 'grid';
+          ed.style.gridTemplateRows = `repeat(${evs.length}, 1fr)`;
+          ed.style.gap = '2px';
+          ed.style.overflow = 'hidden';
+          evs.forEach(e => {
+            const c = CLIENTS[e.client];
+            const block = document.createElement('div');
+            block.style.backgroundColor = c?.color || '#999';
+            block.style.color = 'white';
+            block.style.borderRadius = '3px';
+            block.style.cursor = 'pointer';
+            block.style.padding = '4px 6px';
+            block.style.overflow = 'hidden';
+            block.style.display = 'flex';
+            block.style.flexDirection = 'column';
+            block.style.justifyContent = 'center';
+            const clientName = c?.name || 'Event';
+            const campaignName = e.campaign_name || '';
+            const text = campaignName ? `${clientName}\n${campaignName}` : clientName;
+            block.innerHTML = text.split('\n').map(line => `<div style="font-size: 11px; font-weight: 600; line-height: 1.1;">${line}</div>`).join('');
+            block.onclick = () => showDetails(e);
+            ed.appendChild(block);
+          });
+          d.appendChild(ed);
+        }
+
+        d.onclick = () => showDateEvents(date);
+        cal.appendChild(d);
+      }
+
+      const total = cal.children.length - 7;
+      const remain = 42 - total;
+      for (let day = 1; day <= remain; day++) {
+        const d = document.createElement('div');
+        d.className = 'day other';
+        d.innerHTML = `<div class="day-num">${day}</div>`;
+        cal.appendChild(d);
+      }
+    }
+
+    function applyFilters() {
+      filterClient = document.getElementById('filterClient').value;
+      filterStatus = document.getElementById('filterStatus').value;
+      renderList();
+    }
+
+    function setSortColumn(col) {
+      if (sortColumn === col) {
+        sortColumn = col;
+        sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortColumn = col;
+        sortOrder = 'asc';
+      }
+      renderList();
+    }
+
+    function renderList() {
+      const list = document.getElementById('eventsList');
+      let filtered = [...events];
+
+      if (filterClient) filtered = filtered.filter(e => e.client === filterClient);
+      if (filterStatus) filtered = filtered.filter(e => e.status === filterStatus);
+
+      filtered.sort((a, b) => {
+        let aVal, bVal;
+        if (sortColumn === 'date') {
+          aVal = new Date(a.date);
+          bVal = new Date(b.date);
+        } else if (sortColumn === 'time') {
+          aVal = a.time_start || '00:00';
+          bVal = b.time_start || '00:00';
+        } else if (sortColumn === 'client') {
+          aVal = CLIENTS[a.client]?.name || '';
+          bVal = CLIENTS[b.client]?.name || '';
+        } else if (sortColumn === 'status') {
+          aVal = a.status || '';
+          bVal = b.status || '';
+        } else if (sortColumn === 'actual') {
+          aVal = a.actual || 0;
+          bVal = b.actual || 0;
+        }
+
+        if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      const sorted = filtered;
+
+      if (sorted.length === 0) {
+        list.innerHTML = '<div class="empty">No events</div>';
+        return;
+      }
+
+      let html = `
+        <table class="events-table">
+          <thead>
+            <tr>
+              <th onclick="setSortColumn('client')" style="cursor: pointer;">Client ${sortColumn === 'client' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}</th>
+              <th>Campaign</th>
+              <th onclick="setSortColumn('date')" style="cursor: pointer;">Seminar Date ${sortColumn === 'date' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}</th>
+              <th onclick="setSortColumn('time')" style="cursor: pointer;">Time ${sortColumn === 'time' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}</th>
+              <th>Venue</th>
+              <th onclick="setSortColumn('status')" style="cursor: pointer;">Status ${sortColumn === 'status' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}</th>
+              <th>Lead Goal</th>
+              <th onclick="setSortColumn('actual')" style="cursor: pointer;">Actual Leads ${sortColumn === 'actual' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}</th>
+              <th>% of Goal</th>
+              <th>Attendance</th>
+              <th>Show Rate</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      sorted.forEach(e => {
+        const c = CLIENTS[e.client];
+        const date = new Date(e.date);
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const dateStr = `${days[date.getDay()]} ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+        const timeStr = e.time_start && e.time_end ? `${e.time_start} - ${e.time_end}` : (e.time_start || '-');
+        const pct = e.goal > 0 ? (e.actual / e.goal * 100).toFixed(1) : 0;
+
+        html += `
+          <tr style="cursor: pointer;" onclick="showDetails({id: '${e.id}', client: '${e.client}', date: '${e.date}', venue: '${e.venue}', status: '${e.status}', campaign: ${e.campaign ? `'${e.campaign}'` : 'null'}, campaign_name: '${e.campaign_name || ''}', goal: ${e.goal}, actual: ${e.actual}, attend: ${e.attend}, rate: ${e.rate}, remarks: '${(e.remarks || '').replace(/'/g, "\\'")}', drive: '${e.drive}', crm: '${e.crm}', ghl: '${e.ghl}', n8n: '${e.n8n}'})">
+            <td style="color: ${c?.color || '#999'}; font-weight: 600;">${c?.name || '-'}</td>
+            <td>${e.campaign_name || '-'}</td>
+            <td>${dateStr}</td>
+            <td>${timeStr}</td>
+            <td>${e.venue || '-'}</td>
+            <td>${e.status || '-'}</td>
+            <td>${e.goal || '-'}</td>
+            <td>${e.actual || '-'}</td>
+            <td>${e.goal ? pct + '%' : '-'}</td>
+            <td>${e.attend || '-'}</td>
+            <td>${e.rate ? e.rate + '%' : '-'}</td>
+            <td>${e.remarks || '-'}</td>
+          </tr>
+        `;
+      });
+
+      html += `
+          </tbody>
+        </table>
+      `;
+
+      list.innerHTML = html;
+    }
+
+    function openAdd(date = null) {
+      editId = null;
+      document.getElementById('modalTitle').textContent = 'Add Event';
+      document.getElementById('form').reset();
+      document.getElementById('deleteBtn').style.display = 'none';
+      if (date) document.getElementById('f_date').valueAsDate = date;
+      updateDayDisplay();
+      updateCampaignField();
+      calcPct();
+      calcShowRate();
+      openModal('addModal');
+    }
+
+    function showDetails(e) {
+      const c = CLIENTS[e.client];
+      const pct = e.goal > 0 ? ((e.actual / e.goal) * 100).toFixed(1) : 0;
+
+      let linksHtml = '<div class="detail-links"><h3>Quick Links</h3>';
+      if (e.drive) linksHtml += `<a href="${e.drive}" target="_blank" class="detail-link">[Google Drive]</a>`;
+      if (e.crm) linksHtml += `<a href="${e.crm}" target="_blank" class="detail-link">[CRM Sheets]</a>`;
+      if (e.ghl) linksHtml += `<a href="${e.ghl}" target="_blank" class="detail-link">[GHL]</a>`;
+      if (e.n8n) linksHtml += `<a href="${e.n8n}" target="_blank" class="detail-link">[n8n]</a>`;
+      if (e.zoom) linksHtml += `<a href="${e.zoom}" target="_blank" class="detail-link">[Zoom Register]</a>`;
+      if (e.ad_creatives) linksHtml += `<a href="${e.ad_creatives}" target="_blank" class="detail-link">[Ad Creatives]</a>`;
+      if (e.ad_copies) linksHtml += `<a href="${e.ad_copies}" target="_blank" class="detail-link">[Ad Copies]</a>`;
+      if (e.landing_page) linksHtml += `<a href="${e.landing_page}" target="_blank" class="detail-link">[Landing Page]</a>`;
+      if (!e.drive && !e.crm && !e.ghl && !e.n8n && !e.zoom && !e.ad_creatives && !e.ad_copies && !e.landing_page) {
+        linksHtml += '<p style="font-size: 13px; color: #999;">No links added yet</p>';
+      }
+      linksHtml += '</div>';
+
+      let detailsHtml = '';
+      if (e.client) detailsHtml += `<div class="detail-row"><span class="detail-label">Client</span><span class="detail-value" style="color: ${c?.color}; font-weight: 600;">${c?.name}</span></div>`;
+      detailsHtml += `<div class="detail-row"><span class="detail-label">Date</span><span class="detail-value">${new Date(e.date).toLocaleDateString()}</span></div>`;
+      if (e.venue) detailsHtml += `<div class="detail-row"><span class="detail-label">Venue</span><span class="detail-value">${e.venue}</span></div>`;
+      if (e.status) detailsHtml += `<div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${e.status}</span></div>`;
+      if (e.campaign) detailsHtml += `<div class="detail-row"><span class="detail-label">Campaign Launch</span><span class="detail-value">${new Date(e.campaign).toLocaleDateString()}</span></div>`;
+      if (e.goal) detailsHtml += `<div class="detail-row"><span class="detail-label">Lead Goal</span><span class="detail-value">${e.goal}</span></div>`;
+      if (e.actual) detailsHtml += `<div class="detail-row"><span class="detail-label">Actual Leads</span><span class="detail-value">${e.actual}</span></div>`;
+      if (e.goal || e.actual) detailsHtml += `<div class="detail-row"><span class="detail-label">% of Goal</span><span class="detail-value">${pct}%</span></div>`;
+      if (e.attend) detailsHtml += `<div class="detail-row"><span class="detail-label">Attendance</span><span class="detail-value">${e.attend}</span></div>`;
+      if (e.rate) detailsHtml += `<div class="detail-row"><span class="detail-label">Show Rate</span><span class="detail-value">${e.rate}%</span></div>`;
+      if (e.remarks) detailsHtml += `<div class="detail-row"><span class="detail-label">Remarks</span><span class="detail-value">${e.remarks}</span></div>`;
+
+      document.getElementById('detailsContent').innerHTML = detailsHtml + linksHtml + `
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button class="btn-primary" onclick="editEv('${e.id}')" style="flex: 1;">Edit</button>
+          <button class="btn-secondary" onclick="delEv('${e.id}')" style="flex: 1;">Delete</button>
+        </div>
+      `;
+      openModal('detailsModal');
+    }
+
+    function editEv(id) {
+      const e = events.find(x => x.id === id);
+      if (!e) return;
+      editId = id;
+      document.getElementById('modalTitle').textContent = 'Edit Event';
+      document.getElementById('f_date').valueAsDate = new Date(e.date);
+      document.getElementById('f_time_start').value = e.time_start || '';
+      document.getElementById('f_time_end').value = e.time_end || '';
+      updateDayDisplay();
+      document.getElementById('f_client').value = e.client || '';
+      document.getElementById('f_campaign_select').style.display = 'none';
+      document.getElementById('f_campaign_name').style.display = 'none';
+      updateCampaignField();
+      setTimeout(() => setCampaignValue(e.campaign_name || ''), 50);
+      document.getElementById('f_venue').value = e.venue || '';
+      document.getElementById('f_status').value = e.status || 'Scheduled';
+      if (e.campaign) document.getElementById('f_campaign').valueAsDate = new Date(e.campaign);
+      document.getElementById('f_goal').value = e.goal || '';
+      document.getElementById('f_actual').value = e.actual || '';
+      document.getElementById('f_attend').value = e.attend || '';
+      document.getElementById('f_remarks').value = e.remarks || '';
+      document.getElementById('f_drive').value = e.drive || '';
+      document.getElementById('f_crm').value = e.crm || '';
+      document.getElementById('f_ghl').value = e.ghl || '';
+      document.getElementById('f_n8n').value = e.n8n || '';
+      document.getElementById('f_zoom').value = e.zoom || '';
+      document.getElementById('f_ad_creatives').value = e.ad_creatives || '';
+      document.getElementById('f_ad_copies').value = e.ad_copies || '';
+      document.getElementById('f_landing_page').value = e.landing_page || '';
+      calcPct();
+      calcShowRate();
+      document.getElementById('deleteBtn').style.display = 'block';
+      closeModal('detailsModal');
+      openModal('addModal');
+    }
+
+    async function saveEvent(ev) {
+      ev.preventDefault();
+      console.log('Save event called');
+      const data = {
+        date: new Date(document.getElementById('f_date').value),
+        time_start: document.getElementById('f_time_start').value || '',
+        time_end: document.getElementById('f_time_end').value || '',
+        client: document.getElementById('f_client').value || '',
+        campaign_name: getCampaignValue() || '',
+        venue: document.getElementById('f_venue').value || '',
+        status: document.getElementById('f_status').value || 'Scheduled',
+        campaign: document.getElementById('f_campaign').value ? new Date(document.getElementById('f_campaign').value) : null,
+        goal: parseInt(document.getElementById('f_goal').value) || 0,
+        actual: parseInt(document.getElementById('f_actual').value) || 0,
+        attend: parseInt(document.getElementById('f_attend').value) || 0,
+        rate: parseInt(document.getElementById('f_rate').value) || 0,
+        remarks: document.getElementById('f_remarks').value || '',
+        drive: document.getElementById('f_drive').value || '',
+        crm: document.getElementById('f_crm').value || '',
+        ghl: document.getElementById('f_ghl').value || '',
+        n8n: document.getElementById('f_n8n').value || '',
+        zoom: document.getElementById('f_zoom').value || '',
+        ad_creatives: document.getElementById('f_ad_creatives').value || '',
+        ad_copies: document.getElementById('f_ad_copies').value || '',
+        landing_page: document.getElementById('f_landing_page').value || ''
+      };
+
+      try {
+        console.log('Data to save:', data);
+        if (editId) {
+          console.log('Updating event:', editId);
+          const idx = events.findIndex(e => e.id === editId);
+          if (idx >= 0) {
+            await db.collection('events').doc(editId).update(data);
+          }
+        } else {
+          console.log('Adding new event');
+          await db.collection('events').add(data);
+        }
+        console.log('Event saved, reloading data');
+        await loadData();
+        closeModal('addModal');
+      } catch (e) {
+        console.error('Save error:', e);
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function deleteEvent() {
+      if (!editId || !confirm('Delete?')) return;
+      try {
+        await db.collection('events').doc(editId).delete();
+        await loadData();
+        closeModal('addModal');
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function delEv(id) {
+      if (!confirm('Delete?')) return;
+      try {
+        await db.collection('events').doc(id).delete();
+        await loadData();
+        closeModal('detailsModal');
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+
+      document.getElementById(tab + '-section').classList.add('active');
+      event.target.classList.add('active');
+
+      // Show/hide Add Event button
+      const addBtn = document.getElementById('addEventBtn');
+      if (tab === 'calendar' || tab === 'events') {
+        addBtn.style.display = 'block';
+      } else {
+        addBtn.style.display = 'none';
+      }
+    }
+
+    function showDateEvents(date) {
+      closeModal('detailsModal');
+      const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+      const dayEvents = events.filter(e => new Date(e.date).toDateString() === date.toDateString()).sort((a, b) => a.venue.localeCompare(b.venue));
+
+      document.getElementById('dateEventsTitle').textContent = dateStr;
+
+      let content = '';
+      if (dayEvents.length === 0) {
+        content = '<div class="empty">No events on this date</div>';
+      } else {
+        content = dayEvents.map((e, i) => {
+          const c = CLIENTS[e.client];
+          return `
+            <div class="event-card-item" data-event-id="${e.id}" style="padding: 15px; border: 1px solid #ddd; border-radius: 2px; margin-bottom: 12px; cursor: pointer; border-left: 4px solid ${c?.color || '#999'};">
+              <div style="font-weight: 600; margin-bottom: 6px;">${e.venue}</div>
+              <div style="font-size: 12px; color: #666; display: flex; gap: 12px;">
+                ${e.client ? `<span style="color: ${c?.color}; font-weight: 600;">${c?.name}</span>` : ''}
+                ${e.status ? `<span>${e.status}</span>` : ''}
+                ${e.actual ? `<span>${e.actual} leads</span>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      document.getElementById('dateEventsContent').innerHTML = content;
+
+      // Attach click handlers to event cards
+      document.querySelectorAll('.event-card-item').forEach(card => {
+        card.onclick = () => {
+          const eventId = card.getAttribute('data-event-id');
+          const event = events.find(e => e.id === eventId);
+          if (event) {
+            closeModal('dateEventsModal');
+            showDetails(event);
+          }
+        };
+      });
+
+      document.getElementById('addEventBtn').onclick = () => {
+        closeModal('dateEventsModal');
+        openAdd(date);
+      };
+      openModal('dateEventsModal');
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.add('active');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'addModal' && e.target.classList.contains('active')) {
+        e.target.classList.remove('active');
+      }
+      if (e.target.id === 'detailsModal' && e.target.classList.contains('active')) {
+        e.target.classList.remove('active');
+      }
+      if (e.target.id === 'dateEventsModal' && e.target.classList.contains('active')) {
+        e.target.classList.remove('active');
+      }
+    });
+
+    function showError(msg) {
+      document.getElementById('eventsList').innerHTML = '<div class="error">' + msg + '</div>';
+    }
+
+    function prevMonth() {
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      renderCal();
+    }
+
+    function nextMonth() {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      renderCal();
+    }
+
+    // Initialize
+    (async () => {
+      try {
+        await initFirebase();
+        await loadData();
+      } catch (e) {
+        console.error('Init error:', e);
+        showError('Firebase failed to load: ' + e.message);
+      }
+    })();
+  </script>
+</body>
+</html>
