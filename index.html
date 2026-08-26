@@ -1066,22 +1066,25 @@
         return eventDate >= today && eventDate < endDate;
       });
 
-      const groupedByDate = {};
-      for (let d = new Date(today); d < endDate; d.setDate(d.getDate() + 1)) {
-        const dateKey = d.toISOString().split('T')[0];
-        groupedByDate[dateKey] = [];
+      if (upcomingEvents.length === 0) {
+        content.innerHTML = '<div class="empty" style="padding: 40px 0;">No upcoming events</div>';
+        return;
       }
 
+      const groupedByDate = {};
       upcomingEvents.forEach(e => {
         const d = new Date(e.date);
         const dateKey = d.toISOString().split('T')[0];
-        if (groupedByDate[dateKey]) {
-          groupedByDate[dateKey].push(e);
+        if (!groupedByDate[dateKey]) {
+          groupedByDate[dateKey] = [];
         }
+        groupedByDate[dateKey].push(e);
       });
 
       let html = '';
-      for (const dateKey in groupedByDate) {
+      const sortedDates = Object.keys(groupedByDate).sort();
+
+      sortedDates.forEach(dateKey => {
         const date = new Date(dateKey + 'T00:00:00');
         const dayEvents = groupedByDate[dateKey];
 
@@ -1095,25 +1098,21 @@
           <span class="agenda-day-label">${dayName}, ${dateLabel}</span>
         </div>`;
 
-        if (dayEvents.length === 0) {
-          html += `<div class="agenda-day-empty">No events</div>`;
-        } else {
-          dayEvents.sort((a, b) => (a.time_start || '').localeCompare(b.time_start || ''));
-          dayEvents.forEach(e => {
-            const c = CLIENTS[e.client];
-            const time = e.time_start ? e.time_start : '';
-            html += `<div class="agenda-event" style="border-left-color: ${c?.color || '#999'};" onclick="showDetails({id: '${e.id}', client: '${e.client}', date: '${e.date}', venue: '${e.venue}', status: '${e.status}', campaign: ${e.campaign ? `'${e.campaign}'` : 'null'}, campaign_name: '${e.campaign_name || ''}', goal: ${e.goal}, actual: ${e.actual}, attend: ${e.attend}, rate: ${e.rate}, remarks: '${(e.remarks || '').replace(/'/g, "\\'")}', drive: '${e.drive}', crm: '${e.crm}', ghl: '${e.ghl}', n8n: '${e.n8n}'}); toggleAgendaSidebar();">
-              <div class="agenda-event-title">${e.campaign_name || e.venue || 'Event'}</div>
-              <div class="agenda-event-info">
-                <span class="agenda-event-client" style="color: ${c?.color}">${c?.name}</span>
-                ${time ? `<span>${time}</span>` : ''}
-                ${e.status ? `<span>${e.status}</span>` : ''}
-              </div>
-            </div>`;
-          });
-        }
+        dayEvents.sort((a, b) => (a.time_start || '').localeCompare(b.time_start || ''));
+        dayEvents.forEach(e => {
+          const c = CLIENTS[e.client];
+          const time = e.time_start ? e.time_start : '';
+          html += `<div class="agenda-event" style="border-left-color: ${c?.color || '#999'};" onclick="showDetails({id: '${e.id}', client: '${e.client}', date: '${e.date}', venue: '${e.venue}', status: '${e.status}', campaign: ${e.campaign ? `'${e.campaign}'` : 'null'}, campaign_name: '${e.campaign_name || ''}', goal: ${e.goal}, actual: ${e.actual}, attend: ${e.attend}, rate: ${e.rate}, remarks: '${(e.remarks || '').replace(/'/g, "\\'")}', drive: '${e.drive}', crm: '${e.crm}', ghl: '${e.ghl}', n8n: '${e.n8n}'}); toggleAgendaSidebar();">
+            <div class="agenda-event-title">${e.campaign_name || e.venue || 'Event'}</div>
+            <div class="agenda-event-info">
+              <span class="agenda-event-client" style="color: ${c?.color}">${c?.name}</span>
+              ${time ? `<span>${time}</span>` : ''}
+              ${e.status ? `<span>${e.status}</span>` : ''}
+            </div>
+          </div>`;
+        });
         html += `</div>`;
-      }
+      });
 
       content.innerHTML = html;
     }
