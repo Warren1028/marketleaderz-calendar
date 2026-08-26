@@ -74,9 +74,9 @@
     .detail-link:hover { text-decoration: underline; }
     .detail-link.empty { color: #999; cursor: default; }
 
-    .agenda-toggle { background: #f5f5f5; border: 1px solid #ddd; padding: 10px 16px; cursor: pointer; border-radius: 6px; font-weight: 600; color: #333; margin-right: 12px; transition: all 0.2s; }
-    .agenda-toggle:hover { background: #e0e0e0; }
-    .agenda-toggle.active { background: #6a25a0; color: white; border-color: #6a25a0; }
+    .agenda-toggle { background: #6a25a0; border: 1px solid #6a25a0; padding: 10px 20px; cursor: pointer; border-radius: 6px; font-weight: 600; color: white; margin-right: 12px; transition: all 0.2s; }
+    .agenda-toggle:hover { background: #5a1a90; border-color: #5a1a90; }
+    .agenda-toggle.active { background: #5a1a90; border-color: #5a1a90; }
 
     .agenda-sidebar { position: fixed; right: 0; top: 0; height: 100vh; width: 380px; background: white; border-left: 2px solid #e0e0e0; box-shadow: -4px 0 12px rgba(0,0,0,0.1); transform: translateX(100%); transition: transform 0.3s ease; z-index: 999; display: flex; flex-direction: column; }
     .agenda-sidebar.open { transform: translateX(0); }
@@ -106,7 +106,7 @@
       <img src="logo-allwhite.png" alt="Market Leaders" style="height: 100%; max-width: 150px; object-fit: contain;">
     </div>
     <div style="display: flex; gap: 12px; align-items: center;">
-      <button class="agenda-toggle" id="agendaToggle" onclick="toggleAgendaSidebar()">📅 Upcoming</button>
+      <button class="agenda-toggle" id="agendaToggle" onclick="toggleAgendaSidebar()">Upcoming</button>
       <button class="btn" id="addEventBtn" onclick="openModal('addModal')">Add Event</button>
     </div>
   </div>
