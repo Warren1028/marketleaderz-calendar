@@ -73,6 +73,31 @@
     .detail-link { display: block; padding: 8px 0; color: #0066cc; text-decoration: none; }
     .detail-link:hover { text-decoration: underline; }
     .detail-link.empty { color: #999; cursor: default; }
+
+    .agenda-toggle { background: #f5f5f5; border: 1px solid #ddd; padding: 10px 16px; cursor: pointer; border-radius: 6px; font-weight: 600; color: #333; margin-right: 12px; transition: all 0.2s; }
+    .agenda-toggle:hover { background: #e0e0e0; }
+    .agenda-toggle.active { background: #6a25a0; color: white; border-color: #6a25a0; }
+
+    .agenda-sidebar { position: fixed; right: 0; top: 0; height: 100vh; width: 380px; background: white; border-left: 2px solid #e0e0e0; box-shadow: -4px 0 12px rgba(0,0,0,0.1); transform: translateX(100%); transition: transform 0.3s ease; z-index: 999; display: flex; flex-direction: column; }
+    .agenda-sidebar.open { transform: translateX(0); }
+    .agenda-sidebar-header { padding: 20px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; background: #f9f3ff; }
+    .agenda-sidebar-header h3 { margin: 0; font-size: 16px; font-weight: 600; color: #6a25a0; }
+    .agenda-sidebar-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #999; }
+    .agenda-sidebar-filters { padding: 15px 20px; border-bottom: 1px solid #e0e0e0; display: flex; gap: 8px; background: white; }
+    .agenda-filter-btn { flex: 1; padding: 8px 12px; border: 1px solid #ddd; background: white; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; color: #666; transition: all 0.2s; }
+    .agenda-filter-btn:hover { border-color: #6a25a0; color: #6a25a0; }
+    .agenda-filter-btn.active { background: #6a25a0; color: white; border-color: #6a25a0; }
+    .agenda-sidebar-content { flex: 1; overflow-y: auto; padding: 20px; }
+    .agenda-day { margin-bottom: 20px; }
+    .agenda-day-header { font-weight: 700; color: #6a25a0; font-size: 13px; margin-bottom: 8px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+    .agenda-day-label { font-size: 14px; font-weight: 600; }
+    .agenda-day-date { font-size: 12px; color: #999; }
+    .agenda-day-empty { color: #ccc; font-size: 12px; padding: 8px 0; }
+    .agenda-event { background: #f9f3ff; border-left: 4px solid; padding: 12px; margin-bottom: 8px; border-radius: 4px; cursor: pointer; transition: all 0.2s; font-size: 12px; }
+    .agenda-event:hover { background: #f0e6ff; }
+    .agenda-event-title { font-weight: 600; margin-bottom: 4px; }
+    .agenda-event-info { color: #666; font-size: 11px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .agenda-event-client { font-weight: 600; }
   </style>
 </head>
 <body>
@@ -80,7 +105,10 @@
     <div style="background: #6a25a0; padding: 8px 12px; border-radius: 6px; height: 50px; display: flex; align-items: center;">
       <img src="logo-allwhite.png" alt="Market Leaders" style="height: 100%; max-width: 150px; object-fit: contain;">
     </div>
-    <button class="btn" id="addEventBtn" onclick="openModal('addModal')">Add Event</button>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <button class="agenda-toggle" id="agendaToggle" onclick="toggleAgendaSidebar()">📅 Upcoming</button>
+      <button class="btn" id="addEventBtn" onclick="openModal('addModal')">Add Event</button>
+    </div>
   </div>
 
   <div class="tabs">
@@ -306,6 +334,21 @@
     </div>
   </div>
 
+  <div id="agendaSidebar" class="agenda-sidebar">
+    <div class="agenda-sidebar-header">
+      <h3>Upcoming Events</h3>
+      <button class="agenda-sidebar-close" onclick="toggleAgendaSidebar()">&times;</button>
+    </div>
+    <div class="agenda-sidebar-filters">
+      <button class="agenda-filter-btn active" onclick="setAgendaFilter(7)" data-days="7">7 Days</button>
+      <button class="agenda-filter-btn" onclick="setAgendaFilter(30)" data-days="30">30 Days</button>
+      <button class="agenda-filter-btn" onclick="setAgendaFilter(null)" data-days="all">All</button>
+    </div>
+    <div class="agenda-sidebar-content" id="agendaContent">
+      <div class="loading">Loading...</div>
+    </div>
+  </div>
+
   <!-- Firebase v9 - Compatible with script tags -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -342,6 +385,7 @@
     let filterClient = '';
     let sortColumn = 'date';
     let sortOrder = 'asc';
+    let agendaFilter = 7;
 
     // Properly wait for Firebase to be available
     async function initFirebase() {
@@ -983,6 +1027,95 @@
     function nextMonth() {
       currentDate.setMonth(currentDate.getMonth() + 1);
       renderCal();
+    }
+
+    function toggleAgendaSidebar() {
+      const sidebar = document.getElementById('agendaSidebar');
+      const toggle = document.getElementById('agendaToggle');
+      sidebar.classList.toggle('open');
+      toggle.classList.toggle('active');
+      if (sidebar.classList.contains('open')) {
+        renderAgenda();
+      }
+    }
+
+    function setAgendaFilter(days) {
+      agendaFilter = days;
+      document.querySelectorAll('.agenda-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      renderAgenda();
+    }
+
+    function renderAgenda() {
+      const content = document.getElementById('agendaContent');
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      let endDate = new Date(today);
+      if (agendaFilter) {
+        endDate.setDate(endDate.getDate() + agendaFilter);
+      } else {
+        endDate = new Date(2099, 11, 31);
+      }
+
+      const upcomingEvents = events.filter(e => {
+        const eventDate = new Date(e.date);
+        eventDate.setHours(0, 0, 0, 0);
+        return eventDate >= today && eventDate < endDate;
+      });
+
+      const groupedByDate = {};
+      for (let d = new Date(today); d < endDate; d.setDate(d.getDate() + 1)) {
+        const dateKey = d.toISOString().split('T')[0];
+        groupedByDate[dateKey] = [];
+      }
+
+      upcomingEvents.forEach(e => {
+        const d = new Date(e.date);
+        const dateKey = d.toISOString().split('T')[0];
+        if (groupedByDate[dateKey]) {
+          groupedByDate[dateKey].push(e);
+        }
+      });
+
+      let html = '';
+      for (const dateKey in groupedByDate) {
+        const date = new Date(dateKey + 'T00:00:00');
+        const dayEvents = groupedByDate[dateKey];
+
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const dayName = days[date.getDay()];
+        const isToday = date.toDateString() === today.toDateString();
+        const dateLabel = isToday ? 'Today' : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+        html += `<div class="agenda-day">`;
+        html += `<div class="agenda-day-header">
+          <span class="agenda-day-label">${dayName}, ${dateLabel}</span>
+        </div>`;
+
+        if (dayEvents.length === 0) {
+          html += `<div class="agenda-day-empty">No events</div>`;
+        } else {
+          dayEvents.sort((a, b) => (a.time_start || '').localeCompare(b.time_start || ''));
+          dayEvents.forEach(e => {
+            const c = CLIENTS[e.client];
+            const time = e.time_start ? e.time_start : '';
+            html += `<div class="agenda-event" style="border-left-color: ${c?.color || '#999'};" onclick="showDetails({id: '${e.id}', client: '${e.client}', date: '${e.date}', venue: '${e.venue}', status: '${e.status}', campaign: ${e.campaign ? `'${e.campaign}'` : 'null'}, campaign_name: '${e.campaign_name || ''}', goal: ${e.goal}, actual: ${e.actual}, attend: ${e.attend}, rate: ${e.rate}, remarks: '${(e.remarks || '').replace(/'/g, "\\'")}', drive: '${e.drive}', crm: '${e.crm}', ghl: '${e.ghl}', n8n: '${e.n8n}'}); toggleAgendaSidebar();">
+              <div class="agenda-event-title">${e.campaign_name || e.venue || 'Event'}</div>
+              <div class="agenda-event-info">
+                <span class="agenda-event-client" style="color: ${c?.color}">${c?.name}</span>
+                ${time ? `<span>${time}</span>` : ''}
+                ${e.status ? `<span>${e.status}</span>` : ''}
+              </div>
+            </div>`;
+          });
+        }
+        html += `</div>`;
+      }
+
+      content.innerHTML = html;
     }
 
     // Initialize
