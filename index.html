@@ -114,6 +114,7 @@
   <div class="tabs">
     <div class="tab active" onclick="switchTab('calendar')">Event Calendar</div>
     <div class="tab" onclick="switchTab('events')">All Events</div>
+    <div class="tab" onclick="switchTab('performance')">Performance Dashboard</div>
     <div class="tab" onclick="switchTab('priorities')">Top Priorities</div>
     <div class="tab" onclick="switchTab('campaign')">Campaign Assets</div>
     <div class="tab" onclick="switchTab('adstats')">Ad Account Stats</div>
@@ -153,6 +154,26 @@
         </div>
       </div>
       <div class="events-list" id="eventsList"><div class="loading">Loading events...</div></div>
+    </div>
+
+    <div id="performance-section" class="section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>Performance Dashboard</h2>
+        <button class="btn" onclick="openPerfModal()">Add Campaign Performance</button>
+      </div>
+      <div style="background: #f9f3ff; padding: 20px; border-radius: 8px; border: 1px solid #e0d4f0; margin-bottom: 25px; display: flex; gap: 20px; flex-wrap: wrap;">
+        <div>
+          <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 8px; color: #6a25a0;">Filter by Client</label>
+          <select id="filterPerfClient" onchange="applyPerfFilters()" style="padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+            <option value="">All Clients</option>
+            <option value="client_1">Market Leaders</option>
+            <option value="client_2">Maverick</option>
+            <option value="client_3">Dee Kay</option>
+            <option value="client_4">Nicholas</option>
+          </select>
+        </div>
+      </div>
+      <div id="perfList" class="events-list"><div class="loading">Loading performance data...</div></div>
     </div>
 
     <div id="priorities-section" class="section">
@@ -334,6 +355,120 @@
     </div>
   </div>
 
+  <div id="perfModal" class="modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="perfModalTitle">Add Campaign Performance</h2>
+        <button class="modal-close" onclick="closeModal('perfModal')">&times;</button>
+      </div>
+      <form id="perfForm" onsubmit="savePerfData(event)">
+        <div class="form-section">
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Campaign Name *</label>
+              <input type="text" id="pf_campaign_name" required>
+            </div>
+            <div class="form-field">
+              <label>Client *</label>
+              <select id="pf_client" required>
+                <option value="">Select Client</option>
+                <option value="client_1">Market Leaders</option>
+                <option value="client_2">Maverick</option>
+                <option value="client_3">Dee Kay</option>
+                <option value="client_4">Nicholas</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Start Date</label>
+              <input type="date" id="pf_start_date">
+            </div>
+            <div class="form-field">
+              <label>End Date</label>
+              <input type="date" id="pf_end_date">
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-top: 20px;">
+            <div class="form-field">
+              <label>Amount Spent ($) *</label>
+              <input type="number" id="pf_spend" required step="0.01" oninput="calcPerfMetrics()">
+            </div>
+            <div class="form-field">
+              <label>Leads Generated *</label>
+              <input type="number" id="pf_leads" required step="1" oninput="calcPerfMetrics()">
+            </div>
+            <div class="form-field">
+              <label>Impressions</label>
+              <input type="number" id="pf_impressions" step="1" oninput="calcPerfMetrics()">
+            </div>
+            <div class="form-field">
+              <label>Clicks</label>
+              <input type="number" id="pf_clicks" step="1" oninput="calcPerfMetrics()">
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-top: 20px;">
+            <div class="form-field">
+              <label>Landing Page Views</label>
+              <input type="number" id="pf_landing_views" step="1" oninput="calcPerfMetrics()">
+            </div>
+            <div class="form-field">
+              <label>Link Clicks</label>
+              <input type="number" id="pf_link_clicks" step="1" oninput="calcPerfMetrics()">
+            </div>
+            <div class="form-field">
+              <label>Conversions</label>
+              <input type="number" id="pf_conversions" step="1" oninput="calcPerfMetrics()">
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-top: 20px;">
+            <div class="form-field" style="grid-column: 1 / -1;">
+              <label>Notes</label>
+              <textarea id="pf_notes" style="min-height: 80px;"></textarea>
+            </div>
+          </div>
+
+          <div style="background: #f0e6ff; padding: 15px; border-radius: 6px; margin-top: 20px;">
+            <div style="font-weight: 600; font-size: 13px; color: #6a25a0; margin-bottom: 12px;">Auto-Calculated Metrics</div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+              <div>
+                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Cost Per Lead (CPL)</div>
+                <div style="font-weight: 600; font-size: 16px; color: #6a25a0;" id="pf_cpl">$0.00</div>
+              </div>
+              <div>
+                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Cost Per Mille (CPM)</div>
+                <div style="font-weight: 600; font-size: 16px; color: #6a25a0;" id="pf_cpm">$0.00</div>
+              </div>
+              <div>
+                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Click-Through Rate (CTR)</div>
+                <div style="font-weight: 600; font-size: 16px; color: #6a25a0;" id="pf_ctr">0%</div>
+              </div>
+              <div>
+                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Cost Per Click (CPC)</div>
+                <div style="font-weight: 600; font-size: 16px; color: #6a25a0;" id="pf_cpc">$0.00</div>
+              </div>
+              <div>
+                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Conversion Rate</div>
+                <div style="font-weight: 600; font-size: 16px; color: #6a25a0;" id="pf_conv_rate">0%</div>
+              </div>
+              <div>
+                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Click-to-Lead Rate</div>
+                <div style="font-weight: 600; font-size: 16px; color: #6a25a0;" id="pf_c2l">0%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn-primary">Save</button>
+          <button type="button" class="btn-secondary" id="perfDeleteBtn" style="display:none;" onclick="deletePerfData()">Delete</button>
+          <button type="button" class="btn-secondary" onclick="closeModal('perfModal')">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="agendaSidebar" class="agenda-sidebar">
     <div class="agenda-sidebar-header">
       <h3>Upcoming Events</h3>
@@ -386,6 +521,9 @@
     let sortColumn = 'date';
     let sortOrder = 'asc';
     let agendaFilter = 7;
+    let perfData = [];
+    let perfFilterClient = '';
+    let perfEditId = null;
 
     // Properly wait for Firebase to be available
     async function initFirebase() {
@@ -460,7 +598,19 @@
           });
         });
 
-        console.log('Data loaded: ' + existingClients.length + ' clients, ' + events.length + ' events');
+        const ps = await db.collection('campaign_performance').get();
+        perfData = [];
+        ps.forEach(d => {
+          const data = d.data();
+          perfData.push({
+            id: d.id,
+            ...data,
+            start_date: data.start_date ? (data.start_date?.toDate?.() || new Date(data.start_date)) : null,
+            end_date: data.end_date ? (data.end_date?.toDate?.() || new Date(data.end_date)) : null
+          });
+        });
+
+        console.log('Data loaded: ' + existingClients.length + ' clients, ' + events.length + ' events, ' + perfData.length + ' performance records');
         initUI();
         render();
       } catch (e) {
@@ -579,6 +729,7 @@
     function render() {
       renderCal();
       renderList();
+      renderPerfList();
     }
 
     function renderCal() {
@@ -1115,6 +1266,185 @@
       });
 
       content.innerHTML = html;
+    }
+
+    function calcPerfMetrics() {
+      const spend = parseFloat(document.getElementById('pf_spend').value) || 0;
+      const leads = parseInt(document.getElementById('pf_leads').value) || 0;
+      const impressions = parseInt(document.getElementById('pf_impressions').value) || 0;
+      const clicks = parseInt(document.getElementById('pf_clicks').value) || 0;
+      const landingViews = parseInt(document.getElementById('pf_landing_views').value) || 0;
+      const conversions = parseInt(document.getElementById('pf_conversions').value) || 0;
+
+      const cpl = leads > 0 ? (spend / leads).toFixed(2) : 0;
+      const cpm = impressions > 0 ? ((spend / impressions) * 1000).toFixed(2) : 0;
+      const ctr = impressions > 0 ? ((clicks / impressions) * 100).toFixed(2) : 0;
+      const cpc = clicks > 0 ? (spend / clicks).toFixed(2) : 0;
+      const convRate = landingViews > 0 ? ((conversions / landingViews) * 100).toFixed(2) : 0;
+      const c2l = clicks > 0 ? ((leads / clicks) * 100).toFixed(2) : 0;
+
+      document.getElementById('pf_cpl').textContent = '$' + cpl;
+      document.getElementById('pf_cpm').textContent = '$' + cpm;
+      document.getElementById('pf_ctr').textContent = ctr + '%';
+      document.getElementById('pf_cpc').textContent = '$' + cpc;
+      document.getElementById('pf_conv_rate').textContent = convRate + '%';
+      document.getElementById('pf_c2l').textContent = c2l + '%';
+    }
+
+    function openPerfModal() {
+      perfEditId = null;
+      document.getElementById('perfModalTitle').textContent = 'Add Campaign Performance';
+      document.getElementById('perfForm').reset();
+      document.getElementById('perfDeleteBtn').style.display = 'none';
+      calcPerfMetrics();
+      openModal('perfModal');
+    }
+
+    function applyPerfFilters() {
+      perfFilterClient = document.getElementById('filterPerfClient').value;
+      renderPerfList();
+    }
+
+    async function savePerfData(ev) {
+      ev.preventDefault();
+      const data = {
+        campaign_name: document.getElementById('pf_campaign_name').value || '',
+        client: document.getElementById('pf_client').value || '',
+        start_date: document.getElementById('pf_start_date').value ? new Date(document.getElementById('pf_start_date').value) : null,
+        end_date: document.getElementById('pf_end_date').value ? new Date(document.getElementById('pf_end_date').value) : null,
+        spend: parseFloat(document.getElementById('pf_spend').value) || 0,
+        leads: parseInt(document.getElementById('pf_leads').value) || 0,
+        impressions: parseInt(document.getElementById('pf_impressions').value) || 0,
+        clicks: parseInt(document.getElementById('pf_clicks').value) || 0,
+        landing_views: parseInt(document.getElementById('pf_landing_views').value) || 0,
+        link_clicks: parseInt(document.getElementById('pf_link_clicks').value) || 0,
+        conversions: parseInt(document.getElementById('pf_conversions').value) || 0,
+        notes: document.getElementById('pf_notes').value || ''
+      };
+
+      try {
+        if (perfEditId) {
+          await db.collection('campaign_performance').doc(perfEditId).update(data);
+        } else {
+          await db.collection('campaign_performance').add(data);
+        }
+        await loadData();
+        closeModal('perfModal');
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function deletePerfData() {
+      if (!perfEditId || !confirm('Delete this performance record?')) return;
+      try {
+        await db.collection('campaign_performance').doc(perfEditId).delete();
+        await loadData();
+        closeModal('perfModal');
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    function editPerfData(id) {
+      const p = perfData.find(x => x.id === id);
+      if (!p) return;
+      perfEditId = id;
+      document.getElementById('perfModalTitle').textContent = 'Edit Campaign Performance';
+      document.getElementById('pf_campaign_name').value = p.campaign_name || '';
+      document.getElementById('pf_client').value = p.client || '';
+      if (p.start_date) document.getElementById('pf_start_date').valueAsDate = new Date(p.start_date);
+      if (p.end_date) document.getElementById('pf_end_date').valueAsDate = new Date(p.end_date);
+      document.getElementById('pf_spend').value = p.spend || 0;
+      document.getElementById('pf_leads').value = p.leads || 0;
+      document.getElementById('pf_impressions').value = p.impressions || 0;
+      document.getElementById('pf_clicks').value = p.clicks || 0;
+      document.getElementById('pf_landing_views').value = p.landing_views || 0;
+      document.getElementById('pf_link_clicks').value = p.link_clicks || 0;
+      document.getElementById('pf_conversions').value = p.conversions || 0;
+      document.getElementById('pf_notes').value = p.notes || '';
+      calcPerfMetrics();
+      document.getElementById('perfDeleteBtn').style.display = 'block';
+      openModal('perfModal');
+    }
+
+    function renderPerfList() {
+      const list = document.getElementById('perfList');
+      let filtered = [...perfData];
+
+      if (perfFilterClient) filtered = filtered.filter(p => p.client === perfFilterClient);
+
+      if (filtered.length === 0) {
+        list.innerHTML = '<div class="empty">No performance data yet. Click "Add Campaign Performance" to get started.</div>';
+        return;
+      }
+
+      let html = `
+        <table class="events-table">
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Campaign Name</th>
+              <th>Period</th>
+              <th>Spend</th>
+              <th>Leads</th>
+              <th>CPL</th>
+              <th>Impressions</th>
+              <th>CPM</th>
+              <th>Clicks</th>
+              <th>CTR</th>
+              <th>CPC</th>
+              <th>Landing Views</th>
+              <th>Conv. Rate</th>
+              <th>Click-to-Lead</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      filtered.forEach(p => {
+        const c = CLIENTS[p.client];
+        const cpl = p.leads > 0 ? '$' + (p.spend / p.leads).toFixed(2) : '-';
+        const cpm = p.impressions > 0 ? '$' + ((p.spend / p.impressions) * 1000).toFixed(2) : '-';
+        const ctr = p.impressions > 0 ? ((p.clicks / p.impressions) * 100).toFixed(2) + '%' : '-';
+        const cpc = p.clicks > 0 ? '$' + (p.spend / p.clicks).toFixed(2) : '-';
+        const convRate = p.landing_views > 0 ? ((p.conversions / p.landing_views) * 100).toFixed(2) + '%' : '-';
+        const c2l = p.clicks > 0 ? ((p.leads / p.clicks) * 100).toFixed(2) + '%' : '-';
+
+        const startDate = p.start_date ? new Date(p.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-';
+        const endDate = p.end_date ? new Date(p.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-';
+        const period = startDate !== '-' || endDate !== '-' ? `${startDate} - ${endDate}` : '-';
+
+        html += `
+          <tr style="cursor: pointer;">
+            <td style="color: ${c?.color || '#999'}; font-weight: 600;">${c?.name || '-'}</td>
+            <td>${p.campaign_name || '-'}</td>
+            <td>${period}</td>
+            <td>$${p.spend.toFixed(2)}</td>
+            <td>${p.leads}</td>
+            <td>${cpl}</td>
+            <td>${p.impressions || '-'}</td>
+            <td>${cpm}</td>
+            <td>${p.clicks || '-'}</td>
+            <td>${ctr}</td>
+            <td>${cpc}</td>
+            <td>${p.landing_views || '-'}</td>
+            <td>${convRate}</td>
+            <td>${c2l}</td>
+            <td>
+              <button class="btn-primary" onclick="editPerfData('${p.id}')" style="font-size: 12px; padding: 6px 12px;">Edit</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += `
+          </tbody>
+        </table>
+      `;
+
+      list.innerHTML = html;
     }
 
     // Initialize
