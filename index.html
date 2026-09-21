@@ -388,37 +388,99 @@
             </div>
           </div>
 
-          <div class="form-grid" style="margin-top: 20px;">
+          <div style="font-weight: 600; font-size: 13px; color: #6a25a0; margin-bottom: 12px; margin-top: 20px;">Delivery Metrics</div>
+          <div class="form-grid">
             <div class="form-field">
               <label>Amount Spent ($) *</label>
               <input type="number" id="pf_spend" required step="0.01" oninput="calcPerfMetrics()">
-            </div>
-            <div class="form-field">
-              <label>Leads Generated *</label>
-              <input type="number" id="pf_leads" required step="1" oninput="calcPerfMetrics()">
             </div>
             <div class="form-field">
               <label>Impressions</label>
               <input type="number" id="pf_impressions" step="1" oninput="calcPerfMetrics()">
             </div>
             <div class="form-field">
-              <label>Clicks</label>
-              <input type="number" id="pf_clicks" step="1" oninput="calcPerfMetrics()">
+              <label>Reach (Unique People)</label>
+              <input type="number" id="pf_reach" step="1" oninput="calcPerfMetrics()">
+            </div>
+            <div class="form-field">
+              <label>Frequency (Avg per Person)</label>
+              <input type="number" id="pf_frequency" step="0.01" oninput="calcPerfMetrics()">
             </div>
           </div>
 
-          <div class="form-grid" style="margin-top: 20px;">
-            <div class="form-field">
-              <label>Landing Page Views</label>
-              <input type="number" id="pf_landing_views" step="1" oninput="calcPerfMetrics()">
-            </div>
+          <div style="font-weight: 600; font-size: 13px; color: #6a25a0; margin-bottom: 12px; margin-top: 20px;">Engagement Metrics</div>
+          <div class="form-grid">
             <div class="form-field">
               <label>Link Clicks</label>
               <input type="number" id="pf_link_clicks" step="1" oninput="calcPerfMetrics()">
             </div>
             <div class="form-field">
-              <label>Conversions</label>
-              <input type="number" id="pf_conversions" step="1" oninput="calcPerfMetrics()">
+              <label>Page Views / Landing Page Views</label>
+              <input type="number" id="pf_landing_views" step="1" oninput="calcPerfMetrics()">
+            </div>
+            <div class="form-field">
+              <label>Engagement (Likes, Comments, Shares)</label>
+              <input type="number" id="pf_engagement" step="1" oninput="calcPerfMetrics()">
+            </div>
+            <div class="form-field">
+              <label>Saved Posts</label>
+              <input type="number" id="pf_saves" step="1" oninput="calcPerfMetrics()">
+            </div>
+          </div>
+
+          <div style="font-weight: 600; font-size: 13px; color: #6a25a0; margin-bottom: 12px; margin-top: 20px;">Conversion Metrics</div>
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Conversions / Leads Generated *</label>
+              <input type="number" id="pf_conversions" required step="1" oninput="calcPerfMetrics()">
+            </div>
+            <div class="form-field">
+              <label>Purchases</label>
+              <input type="number" id="pf_purchases" step="1" oninput="calcPerfMetrics()">
+            </div>
+            <div class="form-field">
+              <label>Add to Cart Events</label>
+              <input type="number" id="pf_add_to_cart" step="1" oninput="calcPerfMetrics()">
+            </div>
+            <div class="form-field">
+              <label>Form Submissions</label>
+              <input type="number" id="pf_form_submissions" step="1" oninput="calcPerfMetrics()">
+            </div>
+          </div>
+
+          <div style="font-weight: 600; font-size: 13px; color: #6a25a0; margin-bottom: 12px; margin-top: 20px;">Video Metrics (if applicable)</div>
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Video Views</label>
+              <input type="number" id="pf_video_views" step="1" oninput="calcPerfMetrics()">
+            </div>
+            <div class="form-field">
+              <label>3-Second Video Plays</label>
+              <input type="number" id="pf_video_3sec" step="1" oninput="calcPerfMetrics()">
+            </div>
+            <div class="form-field">
+              <label>Video Complete Views</label>
+              <input type="number" id="pf_video_complete" step="1" oninput="calcPerfMetrics()">
+            </div>
+            <div class="form-field">
+              <label>Avg % Video Watched</label>
+              <input type="number" id="pf_video_percent" step="0.1" min="0" max="100">
+            </div>
+          </div>
+
+          <div style="font-weight: 600; font-size: 13px; color: #6a25a0; margin-bottom: 12px; margin-top: 20px;">Revenue & ROI (Optional)</div>
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Total Revenue / Sale Value ($)</label>
+              <input type="number" id="pf_revenue" step="0.01" oninput="calcPerfMetrics()">
+            </div>
+            <div class="form-field">
+              <label>Customer Acquisition Cost (Auto)</label>
+              <input type="text" id="pf_cac" readonly style="background: #f5f5f5; cursor: not-allowed;">
+            </div>
+            <div class="form-field">
+              <label>Return on Ad Spend - ROAS (Auto)</label>
+              <input type="text" id="pf_roas" readonly style="background: #f5f5f5; cursor: not-allowed;">
             </div>
           </div>
 
@@ -431,30 +493,42 @@
 
           <div style="background: #f0e6ff; padding: 15px; border-radius: 6px; margin-top: 20px;">
             <div style="font-weight: 600; font-size: 13px; color: #6a25a0; margin-bottom: 12px;">Auto-Calculated Metrics</div>
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
               <div>
-                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Cost Per Lead (CPL)</div>
-                <div style="font-weight: 600; font-size: 16px; color: #6a25a0;" id="pf_cpl">$0.00</div>
+                <div style="font-size: 11px; color: #666; margin-bottom: 4px;">CPM (Cost Per 1K Impressions)</div>
+                <div style="font-weight: 600; font-size: 14px; color: #6a25a0;" id="pf_cpm">$0.00</div>
               </div>
               <div>
-                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Cost Per Mille (CPM)</div>
-                <div style="font-weight: 600; font-size: 16px; color: #6a25a0;" id="pf_cpm">$0.00</div>
+                <div style="font-size: 11px; color: #666; margin-bottom: 4px;">CPC (Cost Per Link Click)</div>
+                <div style="font-weight: 600; font-size: 14px; color: #6a25a0;" id="pf_cpc">$0.00</div>
               </div>
               <div>
-                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Click-Through Rate (CTR)</div>
-                <div style="font-weight: 600; font-size: 16px; color: #6a25a0;" id="pf_ctr">0%</div>
+                <div style="font-size: 11px; color: #666; margin-bottom: 4px;">CPL (Cost Per Lead)</div>
+                <div style="font-weight: 600; font-size: 14px; color: #6a25a0;" id="pf_cpl">$0.00</div>
               </div>
               <div>
-                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Cost Per Click (CPC)</div>
-                <div style="font-weight: 600; font-size: 16px; color: #6a25a0;" id="pf_cpc">$0.00</div>
+                <div style="font-size: 11px; color: #666; margin-bottom: 4px;">CTR (Click-Through Rate)</div>
+                <div style="font-weight: 600; font-size: 14px; color: #6a25a0;" id="pf_ctr">0%</div>
               </div>
               <div>
-                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Conversion Rate</div>
-                <div style="font-weight: 600; font-size: 16px; color: #6a25a0;" id="pf_conv_rate">0%</div>
+                <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Conversion Rate (Landing to Lead)</div>
+                <div style="font-weight: 600; font-size: 14px; color: #6a25a0;" id="pf_conv_rate">0%</div>
               </div>
               <div>
-                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Click-to-Lead Rate</div>
-                <div style="font-weight: 600; font-size: 16px; color: #6a25a0;" id="pf_c2l">0%</div>
+                <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Click-to-Lead Rate</div>
+                <div style="font-weight: 600; font-size: 14px; color: #6a25a0;" id="pf_c2l">0%</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Engagement Rate</div>
+                <div style="font-weight: 600; font-size: 14px; color: #6a25a0;" id="pf_engagement_rate">0%</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Video Play Rate</div>
+                <div style="font-weight: 600; font-size: 14px; color: #6a25a0;" id="pf_video_play_rate">0%</div>
+              </div>
+              <div>
+                <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Video 3-Sec Rate</div>
+                <div style="font-weight: 600; font-size: 14px; color: #6a25a0;" id="pf_video_3sec_rate">0%</div>
               </div>
             </div>
           </div>
@@ -1270,25 +1344,45 @@
 
     function calcPerfMetrics() {
       const spend = parseFloat(document.getElementById('pf_spend').value) || 0;
-      const leads = parseInt(document.getElementById('pf_leads').value) || 0;
       const impressions = parseInt(document.getElementById('pf_impressions').value) || 0;
-      const clicks = parseInt(document.getElementById('pf_clicks').value) || 0;
+      const reach = parseInt(document.getElementById('pf_reach').value) || 0;
+      const linkClicks = parseInt(document.getElementById('pf_link_clicks').value) || 0;
       const landingViews = parseInt(document.getElementById('pf_landing_views').value) || 0;
+      const engagement = parseInt(document.getElementById('pf_engagement').value) || 0;
       const conversions = parseInt(document.getElementById('pf_conversions').value) || 0;
+      const videoViews = parseInt(document.getElementById('pf_video_views').value) || 0;
+      const video3Sec = parseInt(document.getElementById('pf_video_3sec').value) || 0;
+      const revenue = parseFloat(document.getElementById('pf_revenue').value) || 0;
 
-      const cpl = leads > 0 ? (spend / leads).toFixed(2) : 0;
+      // Cost metrics
       const cpm = impressions > 0 ? ((spend / impressions) * 1000).toFixed(2) : 0;
-      const ctr = impressions > 0 ? ((clicks / impressions) * 100).toFixed(2) : 0;
-      const cpc = clicks > 0 ? (spend / clicks).toFixed(2) : 0;
-      const convRate = landingViews > 0 ? ((conversions / landingViews) * 100).toFixed(2) : 0;
-      const c2l = clicks > 0 ? ((leads / clicks) * 100).toFixed(2) : 0;
+      const cpc = linkClicks > 0 ? (spend / linkClicks).toFixed(2) : 0;
+      const cpl = conversions > 0 ? (spend / conversions).toFixed(2) : 0;
+      const cac = conversions > 0 ? (spend / conversions).toFixed(2) : 0;
+      const roas = spend > 0 ? (revenue / spend).toFixed(2) : 0;
 
-      document.getElementById('pf_cpl').textContent = '$' + cpl;
+      // Rate metrics
+      const ctr = impressions > 0 ? ((linkClicks / impressions) * 100).toFixed(2) : 0;
+      const convRate = landingViews > 0 ? ((conversions / landingViews) * 100).toFixed(2) : 0;
+      const c2l = linkClicks > 0 ? ((conversions / linkClicks) * 100).toFixed(2) : 0;
+      const engagementRate = impressions > 0 ? ((engagement / impressions) * 100).toFixed(2) : 0;
+      const videoPlayRate = impressions > 0 ? ((videoViews / impressions) * 100).toFixed(2) : 0;
+      const video3SecRate = videoViews > 0 ? ((video3Sec / videoViews) * 100).toFixed(2) : 0;
+
+      // Display calculations
       document.getElementById('pf_cpm').textContent = '$' + cpm;
-      document.getElementById('pf_ctr').textContent = ctr + '%';
       document.getElementById('pf_cpc').textContent = '$' + cpc;
+      document.getElementById('pf_cpl').textContent = '$' + cpl;
+      document.getElementById('pf_ctr').textContent = ctr + '%';
       document.getElementById('pf_conv_rate').textContent = convRate + '%';
       document.getElementById('pf_c2l').textContent = c2l + '%';
+      document.getElementById('pf_engagement_rate').textContent = engagementRate + '%';
+      document.getElementById('pf_video_play_rate').textContent = videoPlayRate + '%';
+      document.getElementById('pf_video_3sec_rate').textContent = video3SecRate + '%';
+
+      // Revenue metrics (shown in form fields)
+      document.getElementById('pf_cac').value = '$' + cac;
+      document.getElementById('pf_roas').value = roas + 'x';
     }
 
     function openPerfModal() {
@@ -1313,12 +1407,22 @@
         start_date: document.getElementById('pf_start_date').value ? new Date(document.getElementById('pf_start_date').value) : null,
         end_date: document.getElementById('pf_end_date').value ? new Date(document.getElementById('pf_end_date').value) : null,
         spend: parseFloat(document.getElementById('pf_spend').value) || 0,
-        leads: parseInt(document.getElementById('pf_leads').value) || 0,
         impressions: parseInt(document.getElementById('pf_impressions').value) || 0,
-        clicks: parseInt(document.getElementById('pf_clicks').value) || 0,
-        landing_views: parseInt(document.getElementById('pf_landing_views').value) || 0,
+        reach: parseInt(document.getElementById('pf_reach').value) || 0,
+        frequency: parseFloat(document.getElementById('pf_frequency').value) || 0,
         link_clicks: parseInt(document.getElementById('pf_link_clicks').value) || 0,
+        landing_views: parseInt(document.getElementById('pf_landing_views').value) || 0,
+        engagement: parseInt(document.getElementById('pf_engagement').value) || 0,
+        saves: parseInt(document.getElementById('pf_saves').value) || 0,
         conversions: parseInt(document.getElementById('pf_conversions').value) || 0,
+        purchases: parseInt(document.getElementById('pf_purchases').value) || 0,
+        add_to_cart: parseInt(document.getElementById('pf_add_to_cart').value) || 0,
+        form_submissions: parseInt(document.getElementById('pf_form_submissions').value) || 0,
+        video_views: parseInt(document.getElementById('pf_video_views').value) || 0,
+        video_3sec: parseInt(document.getElementById('pf_video_3sec').value) || 0,
+        video_complete: parseInt(document.getElementById('pf_video_complete').value) || 0,
+        video_percent: parseFloat(document.getElementById('pf_video_percent').value) || 0,
+        revenue: parseFloat(document.getElementById('pf_revenue').value) || 0,
         notes: document.getElementById('pf_notes').value || ''
       };
 
@@ -1356,12 +1460,22 @@
       if (p.start_date) document.getElementById('pf_start_date').valueAsDate = new Date(p.start_date);
       if (p.end_date) document.getElementById('pf_end_date').valueAsDate = new Date(p.end_date);
       document.getElementById('pf_spend').value = p.spend || 0;
-      document.getElementById('pf_leads').value = p.leads || 0;
       document.getElementById('pf_impressions').value = p.impressions || 0;
-      document.getElementById('pf_clicks').value = p.clicks || 0;
-      document.getElementById('pf_landing_views').value = p.landing_views || 0;
+      document.getElementById('pf_reach').value = p.reach || 0;
+      document.getElementById('pf_frequency').value = p.frequency || 0;
       document.getElementById('pf_link_clicks').value = p.link_clicks || 0;
+      document.getElementById('pf_landing_views').value = p.landing_views || 0;
+      document.getElementById('pf_engagement').value = p.engagement || 0;
+      document.getElementById('pf_saves').value = p.saves || 0;
       document.getElementById('pf_conversions').value = p.conversions || 0;
+      document.getElementById('pf_purchases').value = p.purchases || 0;
+      document.getElementById('pf_add_to_cart').value = p.add_to_cart || 0;
+      document.getElementById('pf_form_submissions').value = p.form_submissions || 0;
+      document.getElementById('pf_video_views').value = p.video_views || 0;
+      document.getElementById('pf_video_3sec').value = p.video_3sec || 0;
+      document.getElementById('pf_video_complete').value = p.video_complete || 0;
+      document.getElementById('pf_video_percent').value = p.video_percent || 0;
+      document.getElementById('pf_revenue').value = p.revenue || 0;
       document.getElementById('pf_notes').value = p.notes || '';
       calcPerfMetrics();
       document.getElementById('perfDeleteBtn').style.display = 'block';
@@ -1380,23 +1494,26 @@
       }
 
       let html = `
-        <table class="events-table">
+        <table class="events-table" style="font-size: 12px;">
           <thead>
             <tr>
               <th>Client</th>
-              <th>Campaign Name</th>
+              <th>Campaign</th>
               <th>Period</th>
               <th>Spend</th>
-              <th>Leads</th>
-              <th>CPL</th>
-              <th>Impressions</th>
-              <th>CPM</th>
+              <th>Impr.</th>
+              <th>Reach</th>
               <th>Clicks</th>
               <th>CTR</th>
+              <th>CPM</th>
               <th>CPC</th>
-              <th>Landing Views</th>
+              <th>Conversions</th>
+              <th>CPL</th>
               <th>Conv. Rate</th>
-              <th>Click-to-Lead</th>
+              <th>Engagement</th>
+              <th>Video Views</th>
+              <th>Revenue</th>
+              <th>ROAS</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -1405,35 +1522,38 @@
 
       filtered.forEach(p => {
         const c = CLIENTS[p.client];
-        const cpl = p.leads > 0 ? '$' + (p.spend / p.leads).toFixed(2) : '-';
         const cpm = p.impressions > 0 ? '$' + ((p.spend / p.impressions) * 1000).toFixed(2) : '-';
-        const ctr = p.impressions > 0 ? ((p.clicks / p.impressions) * 100).toFixed(2) + '%' : '-';
-        const cpc = p.clicks > 0 ? '$' + (p.spend / p.clicks).toFixed(2) : '-';
+        const cpc = p.link_clicks > 0 ? '$' + (p.spend / p.link_clicks).toFixed(2) : '-';
+        const cpl = p.conversions > 0 ? '$' + (p.spend / p.conversions).toFixed(2) : '-';
+        const ctr = p.impressions > 0 ? ((p.link_clicks / p.impressions) * 100).toFixed(2) + '%' : '-';
         const convRate = p.landing_views > 0 ? ((p.conversions / p.landing_views) * 100).toFixed(2) + '%' : '-';
-        const c2l = p.clicks > 0 ? ((p.leads / p.clicks) * 100).toFixed(2) + '%' : '-';
+        const roas = p.spend > 0 ? (p.revenue / p.spend).toFixed(2) + 'x' : '-';
 
-        const startDate = p.start_date ? new Date(p.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-';
-        const endDate = p.end_date ? new Date(p.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-';
-        const period = startDate !== '-' || endDate !== '-' ? `${startDate} - ${endDate}` : '-';
+        const startDate = p.start_date ? new Date(p.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+        const endDate = p.end_date ? new Date(p.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+        const period = startDate || endDate ? `${startDate} - ${endDate}` : '-';
 
         html += `
-          <tr style="cursor: pointer;">
+          <tr>
             <td style="color: ${c?.color || '#999'}; font-weight: 600;">${c?.name || '-'}</td>
             <td>${p.campaign_name || '-'}</td>
             <td>${period}</td>
             <td>$${p.spend.toFixed(2)}</td>
-            <td>${p.leads}</td>
-            <td>${cpl}</td>
             <td>${p.impressions || '-'}</td>
-            <td>${cpm}</td>
-            <td>${p.clicks || '-'}</td>
+            <td>${p.reach || '-'}</td>
+            <td>${p.link_clicks || '-'}</td>
             <td>${ctr}</td>
+            <td>${cpm}</td>
             <td>${cpc}</td>
-            <td>${p.landing_views || '-'}</td>
+            <td>${p.conversions || '-'}</td>
+            <td>${cpl}</td>
             <td>${convRate}</td>
-            <td>${c2l}</td>
+            <td>${p.engagement || '-'}</td>
+            <td>${p.video_views || '-'}</td>
+            <td>${p.revenue ? '$' + p.revenue.toFixed(2) : '-'}</td>
+            <td>${roas}</td>
             <td>
-              <button class="btn-primary" onclick="editPerfData('${p.id}')" style="font-size: 12px; padding: 6px 12px;">Edit</button>
+              <button class="btn-primary" onclick="editPerfData('${p.id}')" style="font-size: 11px; padding: 4px 10px;">Edit</button>
             </td>
           </tr>
         `;
