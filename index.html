@@ -1798,6 +1798,16 @@
           currentProject.files = csvContent;
           await db.collection('projects').doc(projectId).update({ files: csvContent });
 
+          // Save "Analyzing..." status before starting API call
+          const analyzingStatus = {
+            status: 'analyzing',
+            csv_size: csvContent.length,
+            project_name: currentProject.name,
+            started_at: new Date()
+          };
+          await db.collection('projects').doc(projectId).update({ analysis: analyzingStatus });
+          renderProjectsList(); // Update UI to show "Analyzing..."
+
           // Send to Gemini to analyze and generate HTML report
           console.log('About to call generateReportWithGemini with csvContent length:', csvContent.length);
           const htmlReport = await generateReportWithGemini(currentProject.name, csvContent);
@@ -1832,6 +1842,23 @@
         }
       } catch (error) {
         console.error('Error:', error);
+
+        // Save "Analysis Failed" status
+        try {
+          await db.collection('projects').doc(projectId).update({
+            analysis: {
+              status: 'failed',
+              error: error.message,
+              csv_size: csvContent.length,
+              project_name: currentProject?.name,
+              failed_at: new Date()
+            }
+          });
+          renderProjectsList(); // Update UI to show "Analysis Failed"
+        } catch (saveError) {
+          console.error('Failed to save error state:', saveError);
+        }
+
         showNotification('Error', error.message, 'error');
       }
     }
@@ -1886,14 +1913,30 @@
         const fileCount = typeof proj.files === 'string'
           ? (proj.files.match(/=== .+ ===/g) || []).length
           : (proj.files?.length || 0);
-        const status = proj.analysis ? 'Analyzed' : 'Pending Analysis';
+
+        // Determine status based on analysis object
+        let status = 'Pending Analysis';
+        let bgColor = '#fff3cd'; // Yellow for pending
+
+        if (proj.analysis) {
+          if (proj.analysis.status === 'analyzing') {
+            status = 'Analyzing...';
+            bgColor = '#cce5ff'; // Blue for analyzing
+          } else if (proj.analysis.status === 'completed') {
+            status = 'Analyzed';
+            bgColor = '#d4edda'; // Green for completed
+          } else if (proj.analysis.status === 'failed') {
+            status = 'Analysis Failed';
+            bgColor = '#f8d7da'; // Red for failed
+          }
+        }
 
         html += `<tr>
           <td><strong>${proj.name}</strong></td>
           <td>${client}</td>
           <td>${created}</td>
           <td>${fileCount} file(s)</td>
-          <td><span style="background: ${proj.analysis ? '#d4edda' : '#fff3cd'}; padding: 4px 8px; border-radius: 4px; font-size: 11px;">${status}</span></td>
+          <td><span style="background: ${bgColor}; padding: 4px 8px; border-radius: 4px; font-size: 11px;">${status}</span></td>
           <td>
             <button class="btn" onclick="openProject('${proj.id}')" style="padding: 6px 12px; font-size: 12px; background: #6a25a0;">Open</button>
             <button onclick="deleteProject('${proj.id}')" style="padding: 6px 12px; font-size: 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Delete</button>
@@ -1956,6 +1999,16 @@
         currentProject.files = csvContent;
         await db.collection('projects').doc(currentProject.id).update({ files: csvContent });
 
+        // Save "Analyzing..." status before starting API call
+        await db.collection('projects').doc(currentProject.id).update({
+          analysis: {
+            status: 'analyzing',
+            csv_size: csvContent.length,
+            project_name: currentProject.name,
+            started_at: new Date()
+          }
+        });
+
         statusDiv.textContent = 'Sending to Gemini for analysis...';
 
         // Send to Gemini to analyze and generate HTML report
@@ -1989,9 +2042,9 @@
         try {
           await db.collection('projects').doc(currentProject.id).update({
             analysis: {
-              status: 'error',
-              error_message: error.message,
-              error_time: new Date(),
+              status: 'failed',
+              error: error.message,
+              failed_at: new Date(),
               csv_size: csvContent.length,
               project_name: currentProject.name
             },
