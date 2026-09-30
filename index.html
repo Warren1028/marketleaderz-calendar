@@ -393,10 +393,10 @@
   <div id="projectModal" class="modal">
     <div class="modal-box">
       <div class="modal-header">
-        <h2>Create New Project</h2>
+        <h2>Create Project & Upload Files</h2>
         <button class="modal-close" onclick="closeModal('projectModal')">&times;</button>
       </div>
-      <form id="projectForm" onsubmit="createProject(event)">
+      <form id="projectForm" onsubmit="createProjectWithFiles(event)">
         <div class="form-section">
           <div class="form-grid full">
             <div class="form-field">
@@ -405,7 +405,7 @@
             </div>
             <div class="form-field">
               <label>Description</label>
-              <textarea id="proj_desc" placeholder="Describe this project..." style="min-height: 100px;"></textarea>
+              <textarea id="proj_desc" placeholder="Describe this project..." style="min-height: 80px;"></textarea>
             </div>
             <div class="form-field">
               <label>Client</label>
@@ -417,10 +417,15 @@
                 <option value="client_4">Nicholas</option>
               </select>
             </div>
+            <div class="form-field">
+              <label>Upload CSV Files *</label>
+              <input type="file" id="projFileInput" accept=".csv" multiple required style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+              <p style="font-size: 12px; color: #666; margin-top: 6px;">Upload 3 files: Campaigns, Ad Sets, Ads CSV</p>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="submit" class="btn-primary">Create Project</button>
+          <button type="submit" class="btn-primary">Create & Upload</button>
           <button type="button" class="btn-secondary" onclick="closeModal('projectModal')">Cancel</button>
         </div>
       </form>
@@ -1668,35 +1673,106 @@
       openModal('projectModal');
     }
 
-    async function createProject(e) {
+    async function createProjectWithFiles(e) {
       e.preventDefault();
       const name = document.getElementById('proj_name').value;
       const desc = document.getElementById('proj_desc').value;
       const client = document.getElementById('proj_client').value;
+      const fileInput = document.getElementById('projFileInput');
+      const files = fileInput.files;
+
+      if (!name.trim()) {
+        alert('Please enter a project name');
+        return;
+      }
+
+      if (files.length === 0) {
+        alert('Please select CSV files to upload');
+        return;
+      }
 
       try {
+        // Step 1: Create Project
+        console.log('Creating project:', name);
         const docRef = await db.collection('projects').add({
-          name,
-          description: desc,
-          client,
-          created_at: new Date(),
-          files: [],
+          name: name.trim(),
+          description: desc.trim(),
+          client: client || '',
+          created_at: firebase.firestore.FieldValue.serverTimestamp(),
+          files: {},
           analysis: null
         });
 
+        const projectId = docRef.id;
+        console.log('Project created with ID:', projectId);
+
+        // Step 2: Process Files
         closeModal('projectModal');
+        document.getElementById('projectForm').reset();
+
+        alert('Project created! Now processing files...');
+
+        // Load projects and open the new one
         await loadProjects();
-        alert('Project created successfully!');
+        currentProject = projectsData.find(p => p.id === projectId);
+
+        if (currentProject) {
+          // Parse and process CSV files
+          let csvData = {};
+          for (let file of files) {
+            const text = await file.text();
+            const rows = parseCSVFile(text);
+            csvData[file.name] = rows;
+          }
+
+          // Save files to Firestore
+          currentProject.files = csvData;
+          await db.collection('projects').doc(projectId).update({ files: csvData });
+
+          // Extract metrics
+          const metrics = extractMetricsFromCSV(csvData);
+
+          // Get Gemini insights
+          const insights = await getGeminiInsights(metrics, csvData);
+
+          // Generate HTML report
+          const htmlReport = generateHTMLReport(metrics, insights);
+
+          // Save report
+          currentProject.analysis = { metrics, insights, htmlReport };
+          await db.collection('projects').doc(projectId).update({
+            analysis: { metrics, insights, htmlReport }
+          });
+
+          // Display
+          document.getElementById('projectsList').style.display = 'none';
+          document.getElementById('projectDetailsView').style.display = 'block';
+          document.getElementById('projectName').textContent = currentProject.name;
+          document.getElementById('projectDesc').textContent = currentProject.description || 'No description';
+          displayHTMLReport(htmlReport);
+          renderUploadedFiles();
+
+          alert('Report generated successfully!');
+        }
       } catch (error) {
-        console.error('Error creating project:', error);
-        alert('Failed to create project: ' + error.message);
+        console.error('Error:', error);
+        alert('Error: ' + error.message);
       }
     }
 
     async function loadProjects() {
       try {
+        console.log('Loading projects...');
         const snapshot = await db.collection('projects').orderBy('created_at', 'desc').get();
-        projectsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        projectsData = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            created_at: data.created_at?.toDate?.() || new Date(data.created_at) || new Date()
+          };
+        });
+        console.log('Projects loaded:', projectsData.length);
         renderProjectsList();
       } catch (error) {
         console.error('Error loading projects:', error);
