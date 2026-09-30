@@ -1805,8 +1805,17 @@
             project_name: currentProject.name,
             started_at: new Date()
           };
+
+          // Update in-memory data for instant UI feedback
+          currentProject.analysis = analyzingStatus;
+          const projIndex = projectsData.findIndex(p => p.id === projectId);
+          if (projIndex >= 0) {
+            projectsData[projIndex].analysis = analyzingStatus;
+          }
+          renderProjectsList(); // Update UI immediately
+
+          // Also save to Firestore
           await db.collection('projects').doc(projectId).update({ analysis: analyzingStatus });
-          renderProjectsList(); // Update UI to show "Analyzing..."
 
           // Send to Gemini to analyze and generate HTML report
           console.log('About to call generateReportWithGemini with csvContent length:', csvContent.length);
@@ -1844,17 +1853,29 @@
         console.error('Error:', error);
 
         // Save "Analysis Failed" status
+        const failedStatus = {
+          status: 'failed',
+          error: error.message,
+          csv_size: csvContent.length,
+          project_name: currentProject?.name,
+          failed_at: new Date()
+        };
+
+        // Update in-memory data for instant UI feedback
+        if (currentProject) {
+          currentProject.analysis = failedStatus;
+          const projIndex = projectsData.findIndex(p => p.id === projectId);
+          if (projIndex >= 0) {
+            projectsData[projIndex].analysis = failedStatus;
+          }
+          renderProjectsList(); // Update UI immediately
+        }
+
+        // Also save to Firestore
         try {
           await db.collection('projects').doc(projectId).update({
-            analysis: {
-              status: 'failed',
-              error: error.message,
-              csv_size: csvContent.length,
-              project_name: currentProject?.name,
-              failed_at: new Date()
-            }
+            analysis: failedStatus
           });
-          renderProjectsList(); // Update UI to show "Analysis Failed"
         } catch (saveError) {
           console.error('Failed to save error state:', saveError);
         }
@@ -2000,13 +2021,23 @@
         await db.collection('projects').doc(currentProject.id).update({ files: csvContent });
 
         // Save "Analyzing..." status before starting API call
+        const analyzingStatus = {
+          status: 'analyzing',
+          csv_size: csvContent.length,
+          project_name: currentProject.name,
+          started_at: new Date()
+        };
+
+        // Update in-memory data for instant UI feedback
+        currentProject.analysis = analyzingStatus;
+        const projIndex = projectsData.findIndex(p => p.id === currentProject.id);
+        if (projIndex >= 0) {
+          projectsData[projIndex].analysis = analyzingStatus;
+        }
+
+        // Also save to Firestore (in background)
         await db.collection('projects').doc(currentProject.id).update({
-          analysis: {
-            status: 'analyzing',
-            csv_size: csvContent.length,
-            project_name: currentProject.name,
-            started_at: new Date()
-          }
+          analysis: analyzingStatus
         });
 
         statusDiv.textContent = 'Sending to Gemini for analysis...';
@@ -2038,16 +2069,26 @@
         console.error('Upload error:', error);
         statusDiv.textContent = 'Error: ' + error.message;
 
-        // Save error state to Firestore for debugging
+        // Save error state
+        const failedStatus = {
+          status: 'failed',
+          error: error.message,
+          failed_at: new Date(),
+          csv_size: csvContent.length,
+          project_name: currentProject.name
+        };
+
+        // Update in-memory data for instant UI feedback
+        currentProject.analysis = failedStatus;
+        const projIndex = projectsData.findIndex(p => p.id === currentProject.id);
+        if (projIndex >= 0) {
+          projectsData[projIndex].analysis = failedStatus;
+        }
+
+        // Also save to Firestore
         try {
           await db.collection('projects').doc(currentProject.id).update({
-            analysis: {
-              status: 'failed',
-              error: error.message,
-              failed_at: new Date(),
-              csv_size: csvContent.length,
-              project_name: currentProject.name
-            },
+            analysis: failedStatus,
             updated_at: new Date()
           });
         } catch (saveError) {
