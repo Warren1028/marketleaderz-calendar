@@ -126,10 +126,16 @@ async function callGeminiWithModel(apiKey, prompt, model) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(`${model} failed: ${response.status} - ${errorData.error?.message || response.statusText}`);
+      const errorMsg = errorData.error?.message || errorData.message || response.statusText;
+      console.error(`${model} API response error:`, { status: response.status, error: errorMsg, fullError: errorData });
+      throw new Error(`${model} failed: ${response.status} - ${errorMsg}`);
     }
 
     const data = await response.json();
+    if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      console.error(`${model} returned empty content:`, data);
+      throw new Error(`${model} returned no content`);
+    }
     let html = data.candidates[0].content.parts[0].text;
 
     // Extract HTML if wrapped in markdown
