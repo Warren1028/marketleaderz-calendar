@@ -101,7 +101,7 @@ async function callGroqAPI(apiKey, prompt) {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'mixtral-8x7b-32768',
+        model: 'llama-3.1-70b-versatile',
         messages: [
           {
             role: 'user',
@@ -198,9 +198,10 @@ async function callGeminiWithModel(apiKey, prompt, model) {
   }
 }
 
-// Fallback function for secondary model
-async function callGeminiWithModel(apiKey, prompt, model, res) {
+// Fallback function for Gemini models
+async function callGeminiWithModel(apiKey, prompt, model) {
   try {
+    console.log(`Trying ${model}...`);
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
@@ -216,21 +217,28 @@ async function callGeminiWithModel(apiKey, prompt, model, res) {
     );
 
     if (!response.ok) {
-      throw new Error(`${model} failed: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`${model} failed: ${response.status} - ${errorData.error?.message || response.statusText}`);
     }
 
     const data = await response.json();
-    let html = data.candidates[0].content.parts[0].text;
+    let html = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
+    if (!html) {
+      throw new Error(`No content in ${model} response`);
+    }
+
+    // Extract HTML if wrapped in markdown
     if (html.includes('```html')) {
       html = html.replace(/```html\n?/g, '').replace(/```\n?/g, '');
     } else if (html.includes('```')) {
       html = html.replace(/```\n?/g, '');
     }
 
-    return res.status(200).json({ html });
+    console.log(`✓ ${model} succeeded`);
+    return html;
   } catch (error) {
-    console.error('Fallback model error:', error);
-    return res.status(500).json({ error: error.message });
+    console.error(`✗ ${model} error:`, error.message);
+    throw error;
   }
 }
