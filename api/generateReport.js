@@ -89,11 +89,10 @@ Project Name: ${projectName}`;
 // Call Groq API
 async function callGroqAPI(apiKey, prompt) {
   const models = [
-    'mixtral-8x7b-32768',
-    'llama-3.1-70b-versatile',
+    'llama-3.3-70b-versatile',
     'llama-3.1-8b-instant',
-    'llama3-70b-8192',
-    'mixtral-8x7b'
+    'openai/gpt-oss-120b',
+    'openai/gpt-oss-20b'
   ];
 
   for (const model of models) {
