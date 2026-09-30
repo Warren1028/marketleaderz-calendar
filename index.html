@@ -1901,14 +1901,16 @@
       statusDiv.textContent = 'Processing files...';
 
       try {
-        // Read raw CSV content
-        let csvContent = '';
+        // Start with existing files (if any)
+        let csvContent = currentProject.files || '';
+
+        // Add new files
         for (let file of files) {
           const text = await file.text();
           csvContent += `\n\n=== ${file.name} ===\n${text}`;
         }
 
-        // Save raw CSV to Firestore
+        // Save combined CSV to Firestore
         currentProject.files = csvContent;
         await db.collection('projects').doc(currentProject.id).update({ files: csvContent });
 
