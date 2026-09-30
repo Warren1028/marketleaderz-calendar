@@ -1938,7 +1938,13 @@ Project Name: ${projectName}`;
         });
 
         if (!response.ok) {
-          throw new Error('Gemini API error: ' + response.statusText);
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Gemini API Error Details:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData.error || errorData
+          });
+          throw new Error('Gemini API error: ' + (errorData.error?.message || response.statusText));
         }
 
         const data = await response.json();
