@@ -1903,9 +1903,10 @@
     }
 
 
-    async function generateReportWithGemini(projectName, csvContent) {
+    async function generateReportWithGemini(projectName, csvContent, retryCount = 0) {
       // Use environment variable or fallback to window config
       const GEMINI_API_KEY = window.GEMINI_API_KEY || process.env.REACT_APP_GEMINI_API_KEY;
+      const MAX_RETRIES = 3;
 
       const prompt = `You are an expert marketing analyst. Analyze the CSV data below and generate a professional HTML performance report in clean, professional design style.
 
@@ -1980,6 +1981,15 @@ Project Name: ${projectName}`;
         return html;
       } catch (error) {
         console.error('Gemini error:', error);
+
+        // Retry on 503 (Service Unavailable) - Gemini is busy
+        if (error.message.includes('high demand') && retryCount < MAX_RETRIES) {
+          const waitTime = Math.pow(2, retryCount) * 2000; // Exponential backoff: 2s, 4s, 8s
+          console.log(`Gemini API busy. Retrying in ${waitTime}ms... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          return generateReportWithGemini(projectName, csvContent, retryCount + 1);
+        }
+
         // Return a fallback error report
         return `
         <!DOCTYPE html>
