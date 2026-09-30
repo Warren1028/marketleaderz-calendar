@@ -1709,6 +1709,20 @@
       }
 
       try {
+        // IMPORTANT: Read files BEFORE resetting form (form reset clears file input)
+        let csvContent = '';
+        console.log('Files to process:', files.length);
+
+        for (let file of files) {
+          console.log('Reading file:', file.name, 'size:', file.size);
+          const text = await file.text();
+          console.log('File content length:', text.length);
+          csvContent += `\n\n=== ${file.name} ===\n${text}`;
+        }
+
+        console.log('Total CSV content length:', csvContent.length);
+        console.log('CSV Content preview:', csvContent.substring(0, 100));
+
         // Step 1: Create Project
         console.log('Creating project:', name);
         const docRef = await db.collection('projects').add({
@@ -1734,20 +1748,6 @@
         currentProject = projectsData.find(p => p.id === projectId);
 
         if (currentProject) {
-          // Read raw CSV content - send directly to Gemini
-          let csvContent = '';
-          console.log('Files to process:', files.length);
-
-          for (let file of files) {
-            console.log('Reading file:', file.name, 'size:', file.size);
-            const text = await file.text();
-            console.log('File content length:', text.length);
-            csvContent += `\n\n=== ${file.name} ===\n${text}`;
-          }
-
-          console.log('Total CSV content length:', csvContent.length);
-          console.log('CSV Content preview:', csvContent.substring(0, 100));
-
           // Save raw CSV to Firestore
           currentProject.files = csvContent;
           await db.collection('projects').doc(projectId).update({ files: csvContent });
