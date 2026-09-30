@@ -1730,6 +1730,7 @@
 
     let projectsData = [];
     let currentProject = null;
+    let statusListener = null; // Real-time Firestore listener for status updates
 
     async function openProjectModal() {
       document.getElementById('projectForm').reset();
@@ -1817,6 +1818,9 @@
           // Also save to Firestore
           await db.collection('projects').doc(projectId).update({ analysis: analyzingStatus });
 
+          // Start watching for real-time status updates
+          watchProjectStatus(projectId);
+
           // Send to Gemini to analyze and generate HTML report
           console.log('About to call generateReportWithGemini with csvContent length:', csvContent.length);
           const htmlReport = await generateReportWithGemini(currentProject.name, csvContent);
@@ -1881,6 +1885,50 @@
         }
 
         showNotification('Error', error.message, 'error');
+      }
+    }
+
+    function watchProjectStatus(projectId) {
+      // Close previous listener if exists
+      if (statusListener) {
+        statusListener();
+        statusListener = null;
+      }
+
+      // Set up real-time listener for this project
+      statusListener = db.collection('projects').doc(projectId).onSnapshot((doc) => {
+        if (doc.exists) {
+          const data = doc.data();
+
+          // Update the project in projectsData array
+          const projIndex = projectsData.findIndex(p => p.id === projectId);
+          if (projIndex >= 0) {
+            projectsData[projIndex].analysis = data.analysis;
+          }
+
+          // Update currentProject
+          if (currentProject?.id === projectId) {
+            currentProject.analysis = data.analysis;
+
+            // If analysis just completed, display it
+            if (data.analysis?.status === 'completed' && data.analysis?.html) {
+              displayHTMLReport(data.analysis.html);
+              showNotification('Success', 'Report generated successfully!', 'success');
+            }
+          }
+
+          // Re-render project list to show updated status
+          renderProjectsList();
+        }
+      }, (error) => {
+        console.error('Error listening to project status:', error);
+      });
+    }
+
+    function stopWatchingProjectStatus() {
+      if (statusListener) {
+        statusListener();
+        statusListener = null;
       }
     }
 
@@ -1991,6 +2039,7 @@
     }
 
     function backToProjectsList() {
+      stopWatchingProjectStatus(); // Stop listening when leaving project
       document.getElementById('projectsList').style.display = 'block';
       document.getElementById('projectDetailsView').style.display = 'none';
       currentProject = null;
@@ -2039,6 +2088,9 @@
         await db.collection('projects').doc(currentProject.id).update({
           analysis: analyzingStatus
         });
+
+        // Start watching for real-time status updates
+        watchProjectStatus(currentProject.id);
 
         statusDiv.textContent = 'Sending to Gemini for analysis...';
 
