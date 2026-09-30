@@ -75,11 +75,11 @@ NOW GENERATE THE COMPLETE FULL-LENGTH HTML REPORT:`;
       return res.status(500).json({ error: 'Gemini API key not configured' });
     }
 
-    // Smart Gemini model fallback strategy (avoiding overloaded 3.8-flash)
+    // Smart Gemini model fallback strategy
     const models = [
-      'gemini-2.0-flash',      // Stable, proven general purpose
-      'gemini-1.5-flash',      // Reliable fallback
-      'gemini-pro'             // General purpose backup
+      'gemini-2.5-flash',      // Stable, mid-size, 1M tokens (released June 2025)
+      'gemini-3.5-flash',      // Stable general purpose
+      'gemini-3.6-flash'       // Newer, good balance
     ];
 
     console.log('\n=== Attempting Gemini Models ===');
