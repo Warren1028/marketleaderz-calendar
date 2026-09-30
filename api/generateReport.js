@@ -14,40 +14,55 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Missing projectName or csvContent' });
   }
 
-  const prompt = `CRITICAL: You must return ONLY HTML code with embedded CSS. No markdown, no explanation, no text before or after.
+  const prompt = `YOU MUST GENERATE A COMPLETE FULL-LENGTH HTML PERFORMANCE REPORT. THIS IS CRITICAL.
 
-You are an expert marketing analyst. Analyze the CSV data below and generate a professional HTML performance report.
+You are an expert marketing analyst. Create a professional, comprehensive HTML marketing performance report.
 
-REQUIREMENTS:
-1. Complete standalone HTML page with <!DOCTYPE html> and all CSS in <style> tag
-2. Professional header with project name, date, and summary
-3. Key metrics section with big numbers (total spend, leads, cost per lead, etc.)
-4. Campaign/Ad Set performance comparison (tables or cards)
-5. Conversion funnel analysis with visual representation
-6. Top performing ads/campaigns ranked
-7. Performance scorecard (what's working, needs attention)
-8. Actionable next steps
+ABSOLUTE REQUIREMENTS - DO NOT SKIP ANY SECTION:
+1. <!DOCTYPE html> declaration (REQUIRED)
+2. Complete <head> with <style> tag containing ALL CSS styling
+3. <body> with complete report (do not abbreviate)
+4. Professional header: Project name, date range, key summary
+5. KEY METRICS SECTION with large numbers: Total Spend, Total Leads, Cost Per Lead, Impressions, Reach, CTR, Landing Page Views, Conversion Rate
+6. CAMPAIGN COMPARISON TABLE - show each campaign with: Name, Spend, Leads, CPL, Impressions
+7. AD SET PERFORMANCE - ranked by performance metrics
+8. CONVERSION FUNNEL - visual representation: Impressions → Clicks → Landing Page Views → Conversions
+9. TOP PERFORMING ADS - list top 5+ ads with details
+10. PERFORMANCE SCORECARD - What's Working (green), Needs Attention (yellow), Critical Issues (red)
+11. ACTIONABLE RECOMMENDATIONS - 5-10 specific next steps
 
-DESIGN STYLE (Trader Deekay):
-- Professional typography (system fonts)
-- Color-coded badges: green for good, yellow/orange for attention, gray for neutral
-- Use tables for data comparisons
-- Clear section headers
-- Responsive design that works on mobile
-- Clean white/light background
-- Professional spacing and padding
+DESIGN REQUIREMENTS (Trader Deekay Style):
+- Use CSS Grid or Flexbox for layout
+- Professional color scheme: dark text on white/light gray
+- Green badges for positive metrics (#27ae60)
+- Yellow/Orange badges for warnings (#e74c3c)
+- Gray badges for neutral (#95a5a6)
+- Use tables for data (not just text)
+- Include visual spacing and padding
+- Professional fonts (system fonts)
+- Responsive design
+- Include all CSS in <style> tag
 
-CRITICAL INSTRUCTIONS:
-- Return ONLY valid HTML (starting with <!DOCTYPE html>)
-- Include all CSS in <style> tags in the <head>
-- Do NOT include markdown code blocks or backticks
-- Do NOT include any text outside the HTML
-- Make it a complete, working HTML page
+MUST INCLUDE REAL DATA FROM CSV:
+- Extract and display actual numbers from CSV
+- Calculate totals, averages, comparisons
+- Show trends and patterns
+- Make it comprehensive and detailed
 
-CSV Data:
+OUTPUT FORMAT - CRITICAL:
+- Return ONLY complete HTML page starting with <!DOCTYPE html>
+- Include closing </html> tag
+- All CSS must be in <head> <style> tags
+- Do NOT wrap in markdown code blocks
+- Do NOT include explanations or text outside HTML
+- Make it LONG and COMPREHENSIVE - minimum 2000 tokens of actual content
+
+CSV Data to analyze:
 ${csvContent}
 
-Project Name: ${projectName}`;
+Project Name: ${projectName}
+
+NOW GENERATE THE COMPLETE FULL-LENGTH HTML REPORT:`;
 
   try {
     // Check what keys we have
@@ -123,8 +138,8 @@ async function callGroqAPI(apiKey, prompt) {
               content: prompt
             }
           ],
-          temperature: 0.5,
-          max_tokens: 3000
+          temperature: 0.3,
+          max_tokens: 8000
         })
       });
 
