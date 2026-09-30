@@ -1991,34 +1991,31 @@
         const data = await response.json();
         return data.html;
       } catch (error) {
-        console.error('Gemini error:', error);
-
-        // Try fallback model if current one fails
-        if (modelIndex < MODELS.length - 1) {
-          console.log(`${MODEL} failed. Trying fallback model: ${MODELS[modelIndex + 1]}`);
-          return generateReportWithGemini(projectName, csvContent, 0, modelIndex + 1);
-        }
+        console.error('Backend API error:', error);
 
         // Handle timeout
         if (error.name === 'AbortError') {
           console.error('Request timeout after ' + REQUEST_TIMEOUT + 'ms');
 
-          // Try fallback model on timeout
-          if (modelIndex < MODELS.length - 1) {
-            console.log(`${MODEL} timed out. Trying fallback model: ${MODELS[modelIndex + 1]}`);
-            return generateReportWithGemini(projectName, csvContent, 0, modelIndex + 1);
+          // Retry after delay
+          if (retryCount < MAX_RETRIES) {
+            const waitTime = 5000;
+            console.log(`Timeout, retrying in ${waitTime}ms...`);
+            if (statusDiv) statusDiv.textContent = `Timeout, retrying... (${retryCount + 1}/${MAX_RETRIES})`;
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            return generateReportWithGemini(projectName, csvContent, retryCount + 1);
           }
 
-          throw new Error('Gemini API request timed out. Try again in a moment.');
+          throw new Error('Request timed out after multiple retries. Try again in a moment.');
         }
 
-        // Retry on 503 (Service Unavailable) - Gemini is busy
-        if (error.message.includes('high demand') && retryCount < MAX_RETRIES) {
-          const waitTime = 5000; // Wait 5 seconds before retry
-          console.log(`Gemini API busy. Retrying in ${waitTime}ms... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        // Retry on server errors
+        if ((error.message.includes('503') || error.message.includes('429') || error.message.includes('high demand')) && retryCount < MAX_RETRIES) {
+          const waitTime = 5000;
+          console.log(`API busy, retrying in ${waitTime}ms... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
           if (statusDiv) statusDiv.textContent = `API busy, retrying in 5 seconds... (${retryCount + 1}/${MAX_RETRIES})`;
           await new Promise(resolve => setTimeout(resolve, waitTime));
-          return generateReportWithGemini(projectName, csvContent, retryCount + 1, modelIndex);
+          return generateReportWithGemini(projectName, csvContent, retryCount + 1);
         }
 
         // Return a fallback error report
