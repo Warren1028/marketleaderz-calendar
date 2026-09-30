@@ -1748,10 +1748,19 @@
           // Send to Gemini to analyze and generate HTML report
           const htmlReport = await generateReportWithGemini(currentProject.name, csvContent);
 
-          // Save report
-          currentProject.analysis = htmlReport;
+          // Save complete analysis metadata to Firestore
+          const analysisData = {
+            html: htmlReport,
+            generated_at: new Date(),
+            status: 'completed',
+            csv_size: csvContent.length,
+            project_name: currentProject.name
+          };
+
+          currentProject.analysis = analysisData;
           await db.collection('projects').doc(projectId).update({
-            analysis: htmlReport
+            analysis: analysisData,
+            updated_at: new Date()
           });
 
           // Display
@@ -1759,7 +1768,7 @@
           document.getElementById('projectDetailsView').style.display = 'block';
           document.getElementById('projectName').textContent = currentProject.name;
           document.getElementById('projectDesc').textContent = currentProject.description || 'No description';
-          displayHTMLReport(htmlReport);
+          displayHTMLReport(htmlReport); // Pass HTML string
           renderUploadedFiles();
 
           alert('Report generated successfully!');
@@ -1886,9 +1895,20 @@
         // Send to Gemini to analyze and generate HTML report
         const htmlReport = await generateReportWithGemini(currentProject.name, csvContent);
 
-        // Save report
-        currentProject.analysis = htmlReport;
-        await db.collection('projects').doc(currentProject.id).update({ analysis: htmlReport });
+        // Save complete analysis metadata to Firestore
+        const analysisData = {
+          html: htmlReport,
+          generated_at: new Date(),
+          status: 'completed',
+          csv_size: csvContent.length,
+          project_name: currentProject.name
+        };
+
+        currentProject.analysis = analysisData;
+        await db.collection('projects').doc(currentProject.id).update({
+          analysis: analysisData,
+          updated_at: new Date()
+        });
 
         statusDiv.textContent = 'Report ready!';
         displayHTMLReport(htmlReport);
@@ -1898,14 +1918,39 @@
       } catch (error) {
         console.error('Upload error:', error);
         statusDiv.textContent = 'Error: ' + error.message;
+
+        // Save error state to Firestore for debugging
+        try {
+          await db.collection('projects').doc(currentProject.id).update({
+            analysis: {
+              status: 'error',
+              error_message: error.message,
+              error_time: new Date(),
+              csv_size: csvContent.length,
+              project_name: currentProject.name
+            },
+            updated_at: new Date()
+          });
+        } catch (saveError) {
+          console.error('Failed to save error state:', saveError);
+        }
+
         alert('Error: ' + error.message);
       }
     }
 
 
     async function generateReportWithGemini(projectName, csvContent, retryCount = 0, modelIndex = 0) {
+      // Validate inputs
+      if (!window.GEMINI_API_KEY) {
+        throw new Error('Gemini API key not configured. Check the configuration at the top of the script.');
+      }
+      if (!csvContent || csvContent.trim().length === 0) {
+        throw new Error('No CSV data provided for analysis.');
+      }
+
       // Use environment variable or fallback to window config
-      const GEMINI_API_KEY = window.GEMINI_API_KEY || process.env.REACT_APP_GEMINI_API_KEY;
+      const GEMINI_API_KEY = window.GEMINI_API_KEY;
       const MAX_RETRIES = 2;
       const REQUEST_TIMEOUT = 60000; // 60 second timeout per request
       const MODELS = ['gemini-3.8-flash', 'gemini-3.6-flash']; // Fallback model if 3.8 is busy
@@ -2059,7 +2104,9 @@ Project Name: ${projectName}`;
 
 
     function displayHTMLReport(htmlReport) {
-      document.getElementById('analysisResults').innerHTML = htmlReport;
+      // Handle both string (HTML) and object (analysis data)
+      const html = typeof htmlReport === 'string' ? htmlReport : (htmlReport?.html || '');
+      document.getElementById('analysisResults').innerHTML = html;
       document.getElementById('analysisResults').style.display = 'block';
     }
 
