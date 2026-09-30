@@ -1779,6 +1779,9 @@
           displayHTMLReport(htmlReport); // Pass HTML string
           renderUploadedFiles();
 
+          // Refresh project list in background so status updates
+          renderProjectsList();
+
           alert('Report generated successfully!');
         }
       } catch (error) {
@@ -1826,8 +1829,17 @@
 
       projectsData.forEach(proj => {
         const client = CLIENTS[proj.client]?.name || 'N/A';
-        const created = new Date(proj.created_at?.toDate?.()).toLocaleDateString();
-        const fileCount = proj.files?.length || 0;
+        let created = 'N/A';
+        if (proj.created_at?.toDate) {
+          created = proj.created_at.toDate().toLocaleDateString();
+        } else if (proj.created_at instanceof Date) {
+          created = proj.created_at.toLocaleDateString();
+        }
+
+        // Files stored as string now, so count differently
+        const fileCount = typeof proj.files === 'string'
+          ? (proj.files.match(/=== .+ ===/g) || []).length
+          : (proj.files?.length || 0);
         const status = proj.analysis ? 'Analyzed' : 'Pending Analysis';
 
         html += `<tr>
