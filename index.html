@@ -1838,7 +1838,7 @@
 
       renderUploadedFiles();
       if (currentProject.analysis) {
-        displayAnalysis(currentProject.analysis);
+        displayHTMLReport(currentProject.analysis);
       } else {
         document.getElementById('analysisResults').style.display = 'none';
       }
@@ -1863,37 +1863,25 @@
       statusDiv.textContent = 'Processing files...';
 
       try {
-        let csvData = {};
-
-        // Parse CSV files
+        // Read raw CSV content
+        let csvContent = '';
         for (let file of files) {
           const text = await file.text();
-          const rows = parseCSVFile(text);
-          csvData[file.name] = rows;
+          csvContent += `\n\n=== ${file.name} ===\n${text}`;
         }
 
-        // Save files to Firestore
-        currentProject.files = csvData;
-        await db.collection('projects').doc(currentProject.id).update({ files: csvData });
+        // Save raw CSV to Firestore
+        currentProject.files = csvContent;
+        await db.collection('projects').doc(currentProject.id).update({ files: csvContent });
 
-        statusDiv.textContent = 'Extracting metrics...';
+        statusDiv.textContent = 'Sending to Gemini for analysis...';
 
-        // Extract data from CSVs
-        const metrics = extractMetricsFromCSV(csvData);
-
-        statusDiv.textContent = 'Sending to Gemini for insights...';
-
-        // Get Gemini insights
-        const insights = await getGeminiInsights(metrics, csvData);
-
-        statusDiv.textContent = 'Generating report...';
-
-        // Generate HTML report
-        const htmlReport = generateHTMLReport(metrics, insights);
+        // Send to Gemini to analyze and generate HTML report
+        const htmlReport = await generateReportWithGemini(currentProject.name, csvContent);
 
         // Save report
-        currentProject.analysis = { metrics, insights, htmlReport };
-        await db.collection('projects').doc(currentProject.id).update({ analysis: { metrics, insights, htmlReport } });
+        currentProject.analysis = htmlReport;
+        await db.collection('projects').doc(currentProject.id).update({ analysis: htmlReport });
 
         statusDiv.textContent = 'Report ready!';
         displayHTMLReport(htmlReport);
