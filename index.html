@@ -1786,8 +1786,12 @@
       const projectsList = document.getElementById('projectsList');
       const perfList = document.getElementById('perfList');
 
-      perfList.parentElement.style.display = 'none';
-      projectsList.style.display = 'block';
+      if (perfList && perfList.parentElement) {
+        perfList.parentElement.style.display = 'none';
+      }
+      if (projectsList) {
+        projectsList.style.display = 'block';
+      }
 
       if (projectsData.length === 0) {
         document.getElementById('perfProjectList').innerHTML = '<div class="empty">No projects yet. Create one to get started!</div>';
