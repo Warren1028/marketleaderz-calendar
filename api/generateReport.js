@@ -77,9 +77,9 @@ NOW GENERATE THE COMPLETE FULL-LENGTH HTML REPORT:`;
 
     // Smart Gemini model fallback strategy (avoiding overloaded 3.8-flash)
     const models = [
-      'gemini-3-5-flash',      // Stable, proven general purpose
-      'gemini-3-6-flash',      // Newer, good performance/balance
-      'gemini-3-7-flash'       // Latest stable (before overloaded 3.8)
+      'gemini-2.0-flash',      // Stable, proven general purpose
+      'gemini-1.5-flash',      // Reliable fallback
+      'gemini-pro'             // General purpose backup
     ];
 
     console.log('\n=== Attempting Gemini Models ===');
