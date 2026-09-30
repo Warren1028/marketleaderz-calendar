@@ -1,5 +1,5 @@
 // Vercel Serverless Function
-// Calls Groq API (primary) or Gemini API (fallback) with environment variables
+// Calls Gemini API with smart model fallback strategy (avoids overloaded 3.8-flash)
 
 module.exports = async function handler(req, res) {
   // Only allow POST requests
@@ -65,41 +65,37 @@ Project Name: ${projectName}
 NOW GENERATE THE COMPLETE FULL-LENGTH HTML REPORT:`;
 
   try {
-    // Check what keys we have
-    const GROQ_API_KEY = process.env.GROQ_API_KEY;
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-    console.log('=== API Configuration Check ===');
-    console.log('GROQ_API_KEY present:', !!GROQ_API_KEY);
+    console.log('=== Gemini Configuration Check ===');
     console.log('GEMINI_API_KEY present:', !!GEMINI_API_KEY);
 
-    if (!GROQ_API_KEY && !GEMINI_API_KEY) {
-      console.error('ERROR: No API keys configured!');
-      return res.status(500).json({ error: 'No API keys configured on server' });
+    if (!GEMINI_API_KEY) {
+      console.error('ERROR: GEMINI_API_KEY not configured!');
+      return res.status(500).json({ error: 'Gemini API key not configured' });
     }
 
-    // Try Groq first (faster, more reliable)
-    if (GROQ_API_KEY) {
-      console.log('\n=== Attempting Groq API ===');
+    // Smart Gemini model fallback strategy (avoiding overloaded 3.8-flash)
+    const models = [
+      'gemini-2.0-flash',      // Newest, less overloaded
+      'gemini-3.6-flash',      // Stable, less used than 3.8
+      'gemini-3.5-pro'         // Reliable fallback (slower but works)
+    ];
+
+    console.log('\n=== Attempting Gemini Models ===');
+    for (const model of models) {
       try {
-        const html = await callGroqAPI(GROQ_API_KEY, prompt);
-        console.log('✓ Groq API succeeded');
+        console.log(`🔄 Trying ${model}...`);
+        const html = await callGeminiWithModel(GEMINI_API_KEY, prompt, model);
+        console.log(`✓ ${model} succeeded!`);
         return res.status(200).json({ html });
-      } catch (groqError) {
-        console.error('✗ Groq API failed:', groqError.message);
-        console.log('Falling back to Gemini...');
+      } catch (error) {
+        console.error(`✗ ${model} failed:`, error.message);
       }
     }
 
-    // Fallback to Gemini
-    if (GEMINI_API_KEY) {
-      console.log('\n=== Attempting Gemini API ===');
-      const html = await callGeminiWithModel(GEMINI_API_KEY, prompt, 'gemini-3.8-flash');
-      console.log('✓ Gemini API succeeded');
-      return res.status(200).json({ html });
-    }
-
-    return res.status(500).json({ error: 'All API calls failed' });
+    // All models failed
+    throw new Error('All Gemini models failed');
   } catch (error) {
     console.error('\n=== FATAL ERROR ===');
     console.error('Error message:', error.message);
@@ -111,133 +107,9 @@ NOW GENERATE THE COMPLETE FULL-LENGTH HTML REPORT:`;
   }
 }
 
-// Call Groq API
-async function callGroqAPI(apiKey, prompt) {
-  const models = [
-    'qwen/qwen3.8-27b',
-    'openai/gpt-oss-20b',
-    'openai/gpt-oss-120b',
-    'openai/gpt-oss-safeguard-20b',
-    'llama-3.3-70b-versatile',
-    'llama-3.1-8b-instant'
-  ];
-
-  for (const model of models) {
-    try {
-      console.log(`🔄 Trying Groq model: ${model}`);
-
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: model,
-          messages: [
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          temperature: 0.3,
-          max_tokens: 8000
-        })
-      });
-
-      console.log(`Response from ${model}:`, response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => '{}');
-        let errorData = {};
-        try {
-          errorData = JSON.parse(errorText);
-        } catch (e) {
-          errorData = { message: errorText };
-        }
-
-        const errorMsg = errorData.error?.message || errorData.message || response.statusText;
-        console.error(`✗ ${model} failed: ${errorMsg}`);
-        continue; // Try next model
-      }
-
-      const data = await response.json();
-      console.log(`✓ ${model} succeeded!`);
-
-      let html = data.choices?.[0]?.message?.content;
-      if (!html) {
-        throw new Error('No content in response');
-      }
-
-      // Extract HTML if wrapped in markdown
-      if (html.includes('```html')) {
-        html = html.replace(/```html\n?/g, '').replace(/```\n?/g, '');
-      } else if (html.includes('```')) {
-        html = html.replace(/```\n?/g, '');
-      }
-
-      return html;
-    } catch (error) {
-      console.error(`Groq ${model} error:`, error.message);
-      // Continue to next model
-    }
-  }
-
-  // All Groq models failed
-  throw new Error('All Groq models failed. Falling back to Gemini.');
-}
-
-// Fallback function for Gemini models
+// Gemini API wrapper
 async function callGeminiWithModel(apiKey, prompt, model) {
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }]
-        })
-      }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error(`${model} API error:`, errorData);
-
-      // If 3.8 fails, try 3.6 as additional fallback
-      if (model === 'gemini-3.8-flash' && (response.status === 503 || response.status === 429)) {
-        console.log('3.8-flash busy, trying 3.6-flash...');
-        return callGeminiWithModel(apiKey, prompt, 'gemini-3.6-flash');
-      }
-
-      throw new Error(`${model} failed: ${response.status}`);
-    }
-
-    const data = await response.json();
-    let html = data.candidates[0].content.parts[0].text;
-
-    // Extract HTML if wrapped in markdown
-    if (html.includes('```html')) {
-      html = html.replace(/```html\n?/g, '').replace(/```\n?/g, '');
-    } else if (html.includes('```')) {
-      html = html.replace(/```\n?/g, '');
-    }
-
-    return html;
-  } catch (error) {
-    console.error(`Fallback model ${model} error:`, error);
-    throw error;
-  }
-}
-
-// Fallback function for Gemini models
-async function callGeminiWithModel(apiKey, prompt, model) {
-  try {
-    console.log(`Trying ${model}...`);
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
@@ -258,11 +130,7 @@ async function callGeminiWithModel(apiKey, prompt, model) {
     }
 
     const data = await response.json();
-    let html = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!html) {
-      throw new Error(`No content in ${model} response`);
-    }
+    let html = data.candidates[0].content.parts[0].text;
 
     // Extract HTML if wrapped in markdown
     if (html.includes('```html')) {
@@ -271,10 +139,9 @@ async function callGeminiWithModel(apiKey, prompt, model) {
       html = html.replace(/```\n?/g, '');
     }
 
-    console.log(`✓ ${model} succeeded`);
     return html;
   } catch (error) {
-    console.error(`✗ ${model} error:`, error.message);
+    console.error(`Fallback model ${model} error:`, error);
     throw error;
   }
 }
