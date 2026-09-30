@@ -725,6 +725,9 @@
 
     async function loadData() {
       try {
+        if (!db) {
+          throw new Error('Database not initialized. Please refresh the page.');
+        }
         const cs = await db.collection('clients').get();
         const existingClients = [];
         cs.forEach(d => {
