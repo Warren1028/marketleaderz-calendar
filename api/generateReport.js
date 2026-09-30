@@ -14,55 +14,55 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Missing projectName or csvContent' });
   }
 
-  const prompt = `YOU MUST GENERATE A COMPLETE FULL-LENGTH HTML PERFORMANCE REPORT. THIS IS CRITICAL.
+  const prompt = `YOU ARE A MARKETING ANALYST. PARSE THIS CSV DATA AND GENERATE A PROFESSIONAL HTML REPORT.
 
-You are an expert marketing analyst. Create a professional, comprehensive HTML marketing performance report.
+CRITICAL: Follow the EXACT structure below. Every report MUST have this consistent layout:
 
-ABSOLUTE REQUIREMENTS - DO NOT SKIP ANY SECTION:
-1. <!DOCTYPE html> declaration (REQUIRED)
-2. Complete <head> with <style> tag containing ALL CSS styling
-3. <body> with complete report (do not abbreviate)
-4. Professional header: Project name, date range, key summary
-5. KEY METRICS SECTION with large numbers: Total Spend, Total Leads, Cost Per Lead, Impressions, Reach, CTR, Landing Page Views, Conversion Rate
-6. CAMPAIGN COMPARISON TABLE - show each campaign with: Name, Spend, Leads, CPL, Impressions
-7. AD SET PERFORMANCE - ranked by performance metrics
-8. CONVERSION FUNNEL - visual representation: Impressions → Clicks → Landing Page Views → Conversions
-9. TOP PERFORMING ADS - list top 5+ ads with details
-10. PERFORMANCE SCORECARD - What's Working (green), Needs Attention (yellow), Critical Issues (red)
-11. ACTIONABLE RECOMMENDATIONS - 5-10 specific next steps
+MANDATORY STRUCTURE (IN THIS ORDER):
+1. Header section: Project name, date range, brief intro
+2. "The Big Numbers" (h2): 3 stat boxes with: Total Spend, Total Leads, Average Cost Per Lead
+3. "Campaign Comparison" or "Performance by [Category]" (h2): Compare main groups side-by-side
+4. "Are People Noticing the Ads?" / "Conversion Funnel" (h2): Show flow Impressions → Clicks → Landing Page Views → Conversions with percentages
+5. "Where the Budget Went" (h2): Top 5 items ranked by spend with horizontal bar charts
+6. "Top Performing Items" (h2): List best performers (by CPL or leads) with badges (green="Working Well", yellow="Watch")
+7. "Simple Scorecard" (h2): Three sections: ✓ Working Well, ⚠ Needs Attention, 🔄 Paused/Struggling
+8. "What We'll Do Next" (h2): 4-6 bullet points with actionable recommendations
+9. Footer: Citation of data source and date
 
-DESIGN REQUIREMENTS (Trader Deekay Style):
-- Use CSS Grid or Flexbox for layout
-- Professional color scheme: dark text on white/light gray
-- Green badges for positive metrics (#27ae60)
-- Yellow/Orange badges for warnings (#e74c3c)
-- Gray badges for neutral (#95a5a6)
-- Use tables for data (not just text)
-- Include visual spacing and padding
-- Professional fonts (system fonts)
-- Responsive design
-- Include all CSS in <style> tag
+DESIGN (TRADER DEEKAY STYLE):
+- Use CSS variables for colors: --ink, --sub, --line, --bg, --card, --good, --warn, --watch, --accent
+- All colors: dark text on white/light gray background
+- Green (#27ae60) for positive/working, Yellow/Orange (#e74c3c) for warnings, Gray (#95a5a6) for neutral
+- Stat boxes: large bold numbers with labels below
+- Compare boxes: two-column grid with line items
+- Funnel: boxes connected with arrows showing flow
+- Bars: horizontal bars with labels and values
+- Ad cards: title, subtitle, mini-stats, description, action text in bold
+- Pills: small colored badges for status
+- Fully responsive (mobile-friendly)
+- Professional system fonts
+- Generous padding and spacing
 
-MUST INCLUDE REAL DATA FROM CSV:
-- Extract and display actual numbers from CSV
-- Calculate totals, averages, comparisons
-- Show trends and patterns
-- Make it comprehensive and detailed
+EXTRACT FROM CSV:
+- Sum totals for spend, leads, impressions
+- Calculate: Cost Per Lead (Spend ÷ Leads), CTR, conversion rates
+- Identify top 5 best performers and bottom performers
+- Find trends: what's working, what needs attention
+- Group by campaign/ad set if multiple groups exist
 
-OUTPUT FORMAT - CRITICAL:
-- Return ONLY complete HTML page starting with <!DOCTYPE html>
+OUTPUT FORMAT:
+- Return ONLY complete HTML starting with <!DOCTYPE html>
 - Include closing </html> tag
-- All CSS must be in <head> <style> tags
-- Do NOT wrap in markdown code blocks
-- Do NOT include explanations or text outside HTML
-- Make it LONG and COMPREHENSIVE - minimum 2000 tokens of actual content
+- All CSS INSIDE <head><style> tags (NO external stylesheets)
+- NO markdown code blocks, NO explanations outside HTML
+- COMPREHENSIVE: aim for 2500+ tokens of actual HTML content
 
 CSV Data to analyze:
 ${csvContent}
 
 Project Name: ${projectName}
 
-NOW GENERATE THE COMPLETE FULL-LENGTH HTML REPORT:`;
+GENERATE THE REPORT NOW:`;
 
   try {
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
