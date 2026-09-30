@@ -74,41 +74,67 @@ Project Name: ${projectName}`;
 
 // Call Groq API
 async function callGroqAPI(apiKey, prompt) {
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: 'mixtral-8x7b-32768',
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 4000
-    })
-  });
+  try {
+    console.log('Groq API Request Details:');
+    console.log('Endpoint: https://api.groq.com/openai/v1/chat/completions');
+    console.log('Model: mixtral-8x7b-32768');
+    console.log('Prompt length:', prompt.length);
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(`Groq API error: ${response.status} - ${errorData.error?.message || response.statusText}`);
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'mixtral-8x7b-32768',
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.5,
+        max_tokens: 3000
+      })
+    });
+
+    console.log('Groq Response Status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '{}');
+      console.error('Groq Error Response:', errorText);
+
+      let errorData = {};
+      try {
+        errorData = JSON.parse(errorText);
+      } catch (e) {
+        errorData = { message: errorText };
+      }
+
+      throw new Error(`Groq API error ${response.status}: ${errorData.error?.message || errorData.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('Groq Response received successfully');
+
+    let html = data.choices?.[0]?.message?.content;
+    if (!html) {
+      throw new Error('No content in Groq response');
+    }
+
+    // Extract HTML if wrapped in markdown
+    if (html.includes('```html')) {
+      html = html.replace(/```html\n?/g, '').replace(/```\n?/g, '');
+    } else if (html.includes('```')) {
+      html = html.replace(/```\n?/g, '');
+    }
+
+    return html;
+  } catch (error) {
+    console.error('Groq API Error:', error.message);
+    throw error;
   }
-
-  const data = await response.json();
-  let html = data.choices[0].message.content;
-
-  // Extract HTML if wrapped in markdown
-  if (html.includes('```html')) {
-    html = html.replace(/```html\n?/g, '').replace(/```\n?/g, '');
-  } else if (html.includes('```')) {
-    html = html.replace(/```\n?/g, '');
-  }
-
-  return html;
 }
 
 // Fallback function for Gemini models
