@@ -1991,21 +1991,28 @@ Project Name: ${projectName}`;
 
     function renderUploadedFiles() {
       const filesList = document.getElementById('filesList');
-      if (!currentProject?.files || Object.keys(currentProject.files).length === 0) {
+      if (!currentProject?.files) {
         filesList.innerHTML = '<div class="empty">No files uploaded yet</div>';
         return;
       }
 
-      let html = '<table class="events-table"><thead><tr><th>Filename</th><th>Rows</th><th>Upload Date</th></tr></thead><tbody>';
+      // Files are now stored as raw CSV string
+      if (typeof currentProject.files === 'string') {
+        const fileNames = (currentProject.files.match(/=== .+ ===/g) || []).map(f => f.replace(/=== |===/g, ''));
+        if (fileNames.length === 0) {
+          filesList.innerHTML = '<div class="empty">No files uploaded yet</div>';
+          return;
+        }
 
-      for (let filename in currentProject.files) {
-        const data = currentProject.files[filename];
-        const rowCount = Array.isArray(data) ? data.length : 0;
-        html += `<tr><td>${filename}</td><td>${rowCount}</td><td>${new Date().toLocaleDateString()}</td></tr>`;
+        let html = '<table class="events-table"><thead><tr><th>Filename</th><th>Upload Date</th></tr></thead><tbody>';
+        fileNames.forEach(name => {
+          html += `<tr><td>${name}</td><td>${new Date().toLocaleDateString()}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        filesList.innerHTML = html;
+      } else {
+        filesList.innerHTML = '<div class="empty">No files uploaded yet</div>';
       }
-
-      html += '</tbody></table>';
-      filesList.innerHTML = html;
     }
 
     async function deleteProject(projectId) {
