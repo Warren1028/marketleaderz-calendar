@@ -101,7 +101,7 @@ async function callGroqAPI(apiKey, prompt) {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'llama-3.1-70b-versatile',
+        model: 'llama-3.1-8b-instant',
         messages: [
           {
             role: 'user',
