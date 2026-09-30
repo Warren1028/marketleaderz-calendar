@@ -1,5 +1,5 @@
 // Vercel Serverless Function
-// Calls Gemini API with environment variable (never exposed to client)
+// Calls Groq API (primary) or Gemini API (fallback) with environment variables
 
 export default async function handler(req, res) {
   // Only allow POST requests
@@ -12,13 +12,6 @@ export default async function handler(req, res) {
   // Validate inputs
   if (!projectName || !csvContent) {
     return res.status(400).json({ error: 'Missing projectName or csvContent' });
-  }
-
-  // Get API key from environment (NEVER expose to client)
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-  if (!GEMINI_API_KEY) {
-    console.error('GEMINI_API_KEY not configured in Vercel environment');
-    return res.status(500).json({ error: 'API key not configured on server' });
   }
 
   const prompt = `You are an expert marketing analyst. Analyze the CSV data below and generate a professional HTML performance report in clean, professional design style.
@@ -47,15 +40,87 @@ ${csvContent}
 Project Name: ${projectName}`;
 
   try {
-    console.log('Calling Gemini API from Vercel...');
+    // Try Groq first (faster, more reliable)
+    const GROQ_API_KEY = process.env.GROQ_API_KEY;
+    if (GROQ_API_KEY) {
+      console.log('Trying Groq API first...');
+      try {
+        const html = await callGroqAPI(GROQ_API_KEY, prompt);
+        return res.status(200).json({ html });
+      } catch (groqError) {
+        console.error('Groq API failed:', groqError.message);
+        console.log('Falling back to Gemini...');
+      }
+    }
 
+    // Fallback to Gemini
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    if (!GEMINI_API_KEY) {
+      console.error('Neither GROQ_API_KEY nor GEMINI_API_KEY configured');
+      return res.status(500).json({ error: 'No AI API keys configured on server' });
+    }
+
+    console.log('Calling Gemini API from Vercel...');
+    const html = await callGeminiWithModel(GEMINI_API_KEY, prompt, 'gemini-3.8-flash');
+    return res.status(200).json({ html });
+  } catch (error) {
+    console.error('Error generating report:', error);
+    return res.status(500).json({
+      error: error.message || 'Failed to generate report',
+      details: process.env.NODE_ENV === 'development' ? error.toString() : undefined
+    });
+  }
+}
+
+// Call Groq API
+async function callGroqAPI(apiKey, prompt) {
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: 'mixtral-8x7b-32768',
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 4000
+    })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(`Groq API error: ${response.status} - ${errorData.error?.message || response.statusText}`);
+  }
+
+  const data = await response.json();
+  let html = data.choices[0].message.content;
+
+  // Extract HTML if wrapped in markdown
+  if (html.includes('```html')) {
+    html = html.replace(/```html\n?/g, '').replace(/```\n?/g, '');
+  } else if (html.includes('```')) {
+    html = html.replace(/```\n?/g, '');
+  }
+
+  return html;
+}
+
+// Fallback function for Gemini models
+async function callGeminiWithModel(apiKey, prompt, model) {
+  try {
     const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-goog-api-key': GEMINI_API_KEY
+          'x-goog-api-key': apiKey
         },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }]
@@ -65,15 +130,15 @@ Project Name: ${projectName}`;
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('Gemini API error:', errorData);
+      console.error(`${model} API error:`, errorData);
 
-      // If 3.8 fails, try 3.6 as fallback
-      if (response.status === 503 || response.status === 429) {
-        console.log('3.8-flash busy, trying 3.6-flash fallback...');
-        return callGeminiWithModel(GEMINI_API_KEY, prompt, 'gemini-3.6-flash', res);
+      // If 3.8 fails, try 3.6 as additional fallback
+      if (model === 'gemini-3.8-flash' && (response.status === 503 || response.status === 429)) {
+        console.log('3.8-flash busy, trying 3.6-flash...');
+        return callGeminiWithModel(apiKey, prompt, 'gemini-3.6-flash');
       }
 
-      throw new Error(`Gemini API error: ${response.status} - ${errorData.error?.message || response.statusText}`);
+      throw new Error(`${model} failed: ${response.status}`);
     }
 
     const data = await response.json();
@@ -86,13 +151,10 @@ Project Name: ${projectName}`;
       html = html.replace(/```\n?/g, '');
     }
 
-    return res.status(200).json({ html });
+    return html;
   } catch (error) {
-    console.error('Error generating report:', error);
-    return res.status(500).json({
-      error: error.message || 'Failed to generate report',
-      details: process.env.NODE_ENV === 'development' ? error.toString() : undefined
-    });
+    console.error(`Fallback model ${model} error:`, error);
+    throw error;
   }
 }
 
