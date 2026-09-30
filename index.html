@@ -641,6 +641,13 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
   <script>
+    // ==========================================
+    // Configuration - Set API Key Here
+    // ==========================================
+    // Set your Gemini API key below. Never commit sensitive keys to GitHub.
+    // For production, use environment variables or a backend service.
+    window.GEMINI_API_KEY = 'AIzaSyCNgAF_cxC1RK71xEyvqpMG6R_YXBRdQsI';
+
     const CLIENTS = {
       client_1: { name: 'Market Leaders', color: '#9b59b6' },
       client_2: { name: 'Maverick', color: '#f1c40f' },
@@ -1897,7 +1904,8 @@
 
 
     async function generateReportWithGemini(projectName, csvContent) {
-      const GEMINI_API_KEY = 'AIzaSyDqLF_5Asku_piCJldJnMNKZL4KPRjLgDU';
+      // Use environment variable or fallback to window config
+      const GEMINI_API_KEY = window.GEMINI_API_KEY || process.env.REACT_APP_GEMINI_API_KEY;
 
       const prompt = `You are an expert marketing analyst. Analyze the CSV data below and generate a professional HTML performance report in clean, professional design style.
 
@@ -1944,8 +1952,20 @@ Project Name: ${projectName}`;
             statusText: response.statusText,
             error: errorData.error || errorData
           });
+
+          // Check if API key is missing or invalid
+          if (response.status === 403 && errorData.error?.message?.includes('leaked')) {
+            throw new Error('API key has been disabled. Please update it in the configuration.');
+          } else if (response.status === 401 || response.status === 403) {
+            throw new Error('API authentication failed. Check your API key configuration.');
+          }
+
           throw new Error('Gemini API error: ' + (errorData.error?.message || response.statusText));
         }
+
+      if (!window.GEMINI_API_KEY) {
+        throw new Error('Gemini API key is not configured. Set window.GEMINI_API_KEY in the script.');
+      }
 
         const data = await response.json();
         let html = data.candidates[0].content.parts[0].text;
