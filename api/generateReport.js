@@ -1,0 +1,134 @@
+// Vercel Serverless Function
+// Calls Gemini API with environment variable (never exposed to client)
+
+export default async function handler(req, res) {
+  // Only allow POST requests
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { projectName, csvContent } = req.body;
+
+  // Validate inputs
+  if (!projectName || !csvContent) {
+    return res.status(400).json({ error: 'Missing projectName or csvContent' });
+  }
+
+  // Get API key from environment (NEVER expose to client)
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  if (!GEMINI_API_KEY) {
+    console.error('GEMINI_API_KEY not configured in Vercel environment');
+    return res.status(500).json({ error: 'API key not configured on server' });
+  }
+
+  const prompt = `You are an expert marketing analyst. Analyze the CSV data below and generate a professional HTML performance report in clean, professional design style.
+
+The report should include:
+1. A professional header with project name, date, and summary
+2. Key metrics (total spend, leads, cost per lead, etc.) - extract these from the data
+3. Campaign/Ad Set performance comparison
+4. Conversion funnel analysis if possible
+5. Top performing ads/campaigns ranked
+6. Performance scorecard (what's working, needs attention)
+7. Actionable next steps
+
+Use a clean, professional design similar to marketing reports. Use the Trader Deekay style:
+- Professional typography
+- Color-coded status badges (green for good, yellow for attention, gray for watch)
+- Tables for data
+- Clear sections with headers
+- Responsive design
+
+Return ONLY the HTML code (no markdown, no explanation). The HTML should be a complete standalone page with all CSS included.
+
+CSV Data:
+${csvContent}
+
+Project Name: ${projectName}`;
+
+  try {
+    console.log('Calling Gemini API from Vercel...');
+
+    const response = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': GEMINI_API_KEY
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Gemini API error:', errorData);
+
+      // If 3.8 fails, try 3.6 as fallback
+      if (response.status === 503 || response.status === 429) {
+        console.log('3.8-flash busy, trying 3.6-flash fallback...');
+        return callGeminiWithModel(GEMINI_API_KEY, prompt, 'gemini-3.6-flash', res);
+      }
+
+      throw new Error(`Gemini API error: ${response.status} - ${errorData.error?.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+    let html = data.candidates[0].content.parts[0].text;
+
+    // Extract HTML if wrapped in markdown
+    if (html.includes('```html')) {
+      html = html.replace(/```html\n?/g, '').replace(/```\n?/g, '');
+    } else if (html.includes('```')) {
+      html = html.replace(/```\n?/g, '');
+    }
+
+    return res.status(200).json({ html });
+  } catch (error) {
+    console.error('Error generating report:', error);
+    return res.status(500).json({
+      error: error.message || 'Failed to generate report',
+      details: process.env.NODE_ENV === 'development' ? error.toString() : undefined
+    });
+  }
+}
+
+// Fallback function for secondary model
+async function callGeminiWithModel(apiKey, prompt, model, res) {
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`${model} failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    let html = data.candidates[0].content.parts[0].text;
+
+    if (html.includes('```html')) {
+      html = html.replace(/```html\n?/g, '').replace(/```\n?/g, '');
+    } else if (html.includes('```')) {
+      html = html.replace(/```\n?/g, '');
+    }
+
+    return res.status(200).json({ html });
+  } catch (error) {
+    console.error('Fallback model error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}
