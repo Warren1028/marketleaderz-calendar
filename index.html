@@ -1755,9 +1755,11 @@
         return;
       }
 
+      let csvContent = ''; // Declare outside try block for use in catch
+      let projectId = null; // Declare outside try block for use in catch
+
       try {
         // IMPORTANT: Read files BEFORE resetting form (form reset clears file input)
-        let csvContent = '';
         console.log('Files to process:', files.length);
 
         for (let file of files) {
@@ -1781,7 +1783,7 @@
           analysis: null
         });
 
-        const projectId = docRef.id;
+        projectId = docRef.id;
         console.log('Project created with ID:', projectId);
 
         // Step 2: Process Files
@@ -1860,13 +1862,13 @@
         const failedStatus = {
           status: 'failed',
           error: error.message,
-          csv_size: csvContent.length,
-          project_name: currentProject?.name,
+          csv_size: csvContent?.length || 0,
+          project_name: currentProject?.name || 'Unknown',
           failed_at: new Date()
         };
 
         // Update in-memory data for instant UI feedback
-        if (currentProject) {
+        if (currentProject && projectId) {
           currentProject.analysis = failedStatus;
           const projIndex = projectsData.findIndex(p => p.id === projectId);
           if (projIndex >= 0) {
@@ -1876,12 +1878,14 @@
         }
 
         // Also save to Firestore
-        try {
-          await db.collection('projects').doc(projectId).update({
-            analysis: failedStatus
-          });
-        } catch (saveError) {
-          console.error('Failed to save error state:', saveError);
+        if (projectId) {
+          try {
+            await db.collection('projects').doc(projectId).update({
+              analysis: failedStatus
+            });
+          } catch (saveError) {
+            console.error('Failed to save error state:', saveError);
+          }
         }
 
         showNotification('Error', error.message, 'error');
@@ -2057,9 +2061,10 @@
       const statusDiv = document.getElementById('uploadStatus');
       statusDiv.textContent = 'Processing files...';
 
+      let csvContent = ''; // Declare outside try block for use in catch
+
       try {
         // Read raw CSV content from selected files
-        let csvContent = '';
         for (let file of files) {
           const text = await file.text();
           csvContent += `\n\n=== ${file.name} ===\n${text}`;
