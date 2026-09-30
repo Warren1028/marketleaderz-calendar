@@ -40,31 +40,45 @@ ${csvContent}
 Project Name: ${projectName}`;
 
   try {
-    // Try Groq first (faster, more reliable)
+    // Check what keys we have
     const GROQ_API_KEY = process.env.GROQ_API_KEY;
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+    console.log('=== API Configuration Check ===');
+    console.log('GROQ_API_KEY present:', !!GROQ_API_KEY);
+    console.log('GEMINI_API_KEY present:', !!GEMINI_API_KEY);
+
+    if (!GROQ_API_KEY && !GEMINI_API_KEY) {
+      console.error('ERROR: No API keys configured!');
+      return res.status(500).json({ error: 'No API keys configured on server' });
+    }
+
+    // Try Groq first (faster, more reliable)
     if (GROQ_API_KEY) {
-      console.log('Trying Groq API first...');
+      console.log('\n=== Attempting Groq API ===');
       try {
         const html = await callGroqAPI(GROQ_API_KEY, prompt);
+        console.log('✓ Groq API succeeded');
         return res.status(200).json({ html });
       } catch (groqError) {
-        console.error('Groq API failed:', groqError.message);
+        console.error('✗ Groq API failed:', groqError.message);
         console.log('Falling back to Gemini...');
       }
     }
 
     // Fallback to Gemini
-    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-    if (!GEMINI_API_KEY) {
-      console.error('Neither GROQ_API_KEY nor GEMINI_API_KEY configured');
-      return res.status(500).json({ error: 'No AI API keys configured on server' });
+    if (GEMINI_API_KEY) {
+      console.log('\n=== Attempting Gemini API ===');
+      const html = await callGeminiWithModel(GEMINI_API_KEY, prompt, 'gemini-3.8-flash');
+      console.log('✓ Gemini API succeeded');
+      return res.status(200).json({ html });
     }
 
-    console.log('Calling Gemini API from Vercel...');
-    const html = await callGeminiWithModel(GEMINI_API_KEY, prompt, 'gemini-3.8-flash');
-    return res.status(200).json({ html });
+    return res.status(500).json({ error: 'All API calls failed' });
   } catch (error) {
-    console.error('Error generating report:', error);
+    console.error('\n=== FATAL ERROR ===');
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     return res.status(500).json({
       error: error.message || 'Failed to generate report',
       details: process.env.NODE_ENV === 'development' ? error.toString() : undefined
