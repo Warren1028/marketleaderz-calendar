@@ -1753,6 +1753,7 @@
           await db.collection('projects').doc(projectId).update({ files: csvContent });
 
           // Send to Gemini to analyze and generate HTML report
+          console.log('About to call generateReportWithGemini with csvContent length:', csvContent.length);
           const htmlReport = await generateReportWithGemini(currentProject.name, csvContent);
 
           // Save complete analysis metadata to Firestore
@@ -1948,11 +1949,21 @@
 
 
     async function generateReportWithGemini(projectName, csvContent, retryCount = 0, modelIndex = 0) {
+      // Log what we received
+      console.log('generateReportWithGemini called with:');
+      console.log('  projectName:', projectName);
+      console.log('  csvContent type:', typeof csvContent);
+      console.log('  csvContent length:', csvContent?.length || 'undefined');
+      console.log('  csvContent preview:', typeof csvContent === 'string' ? csvContent.substring(0, 50) : csvContent);
+
       // Validate inputs
       if (!window.GEMINI_API_KEY) {
         throw new Error('Gemini API key not configured. Check the configuration at the top of the script.');
       }
-      if (!csvContent || csvContent.trim().length === 0) {
+
+      // More lenient CSV validation
+      if (typeof csvContent !== 'string' || csvContent.replace(/[\n\s=]/g, '').length === 0) {
+        console.error('CSV validation failed. Received:', csvContent);
         throw new Error('No CSV data provided for analysis.');
       }
 
