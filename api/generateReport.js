@@ -14,25 +14,35 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Missing projectName or csvContent' });
   }
 
-  const prompt = `You are an expert marketing analyst. Analyze the CSV data below and generate a professional HTML performance report in clean, professional design style.
+  const prompt = `CRITICAL: You must return ONLY HTML code with embedded CSS. No markdown, no explanation, no text before or after.
 
-The report should include:
-1. A professional header with project name, date, and summary
-2. Key metrics (total spend, leads, cost per lead, etc.) - extract these from the data
-3. Campaign/Ad Set performance comparison
-4. Conversion funnel analysis if possible
-5. Top performing ads/campaigns ranked
-6. Performance scorecard (what's working, needs attention)
-7. Actionable next steps
+You are an expert marketing analyst. Analyze the CSV data below and generate a professional HTML performance report.
 
-Use a clean, professional design similar to marketing reports. Use the Trader Deekay style:
-- Professional typography
-- Color-coded status badges (green for good, yellow for attention, gray for watch)
-- Tables for data
-- Clear sections with headers
-- Responsive design
+REQUIREMENTS:
+1. Complete standalone HTML page with <!DOCTYPE html> and all CSS in <style> tag
+2. Professional header with project name, date, and summary
+3. Key metrics section with big numbers (total spend, leads, cost per lead, etc.)
+4. Campaign/Ad Set performance comparison (tables or cards)
+5. Conversion funnel analysis with visual representation
+6. Top performing ads/campaigns ranked
+7. Performance scorecard (what's working, needs attention)
+8. Actionable next steps
 
-Return ONLY the HTML code (no markdown, no explanation). The HTML should be a complete standalone page with all CSS included.
+DESIGN STYLE (Trader Deekay):
+- Professional typography (system fonts)
+- Color-coded badges: green for good, yellow/orange for attention, gray for neutral
+- Use tables for data comparisons
+- Clear section headers
+- Responsive design that works on mobile
+- Clean white/light background
+- Professional spacing and padding
+
+CRITICAL INSTRUCTIONS:
+- Return ONLY valid HTML (starting with <!DOCTYPE html>)
+- Include all CSS in <style> tags in the <head>
+- Do NOT include markdown code blocks or backticks
+- Do NOT include any text outside the HTML
+- Make it a complete, working HTML page
 
 CSV Data:
 ${csvContent}
