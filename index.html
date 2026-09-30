@@ -1736,10 +1736,17 @@
         if (currentProject) {
           // Read raw CSV content - send directly to Gemini
           let csvContent = '';
+          console.log('Files to process:', files.length);
+
           for (let file of files) {
+            console.log('Reading file:', file.name, 'size:', file.size);
             const text = await file.text();
+            console.log('File content length:', text.length);
             csvContent += `\n\n=== ${file.name} ===\n${text}`;
           }
+
+          console.log('Total CSV content length:', csvContent.length);
+          console.log('CSV Content preview:', csvContent.substring(0, 100));
 
           // Save raw CSV to Firestore
           currentProject.files = csvContent;
