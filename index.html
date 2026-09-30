@@ -640,6 +640,18 @@
     </div>
   </div>
 
+  <!-- Notification Modal -->
+  <div id="notificationModal" class="modal">
+    <div class="modal-box" style="max-width: 420px;">
+      <div style="padding: 30px 25px; text-align: center;">
+        <div id="notificationIcon" style="font-size: 48px; margin-bottom: 16px;"></div>
+        <h2 id="notificationTitle" style="margin: 0 0 12px; color: #1a1a1a; font-size: 20px;"></h2>
+        <p id="notificationMessage" style="margin: 0 0 24px; color: #666; font-size: 15px; line-height: 1.6;"></p>
+        <button id="notificationBtn" onclick="closeModal('notificationModal')" class="btn" style="padding: 10px 24px; min-width: 120px;">OK</button>
+      </div>
+    </div>
+  </div>
+
   <div id="agendaSidebar" class="agenda-sidebar">
     <div class="agenda-sidebar-header">
       <h3>Upcoming Events</h3>
@@ -1238,7 +1250,7 @@
         closeModal('addModal');
       } catch (e) {
         console.error('Save error:', e);
-        alert('Error: ' + e.message);
+        showNotification('Error', e.message, 'error');
       }
     }
 
@@ -1249,7 +1261,7 @@
         await loadData();
         closeModal('addModal');
       } catch (e) {
-        alert('Error: ' + e.message);
+        showNotification('Error', e.message, 'error');
       }
     }
 
@@ -1260,7 +1272,7 @@
         await loadData();
         closeModal('detailsModal');
       } catch (e) {
-        alert('Error: ' + e.message);
+        showNotification('Error', e.message, 'error');
       }
     }
 
@@ -1335,6 +1347,20 @@
       document.getElementById(id).classList.remove('active');
     }
 
+    function showNotification(title, message, type = 'success') {
+      const icons = {
+        success: '✅',
+        error: '❌',
+        info: 'ℹ️',
+        processing: '⏳'
+      };
+
+      document.getElementById('notificationIcon').textContent = icons[type] || icons.info;
+      document.getElementById('notificationTitle').textContent = title;
+      document.getElementById('notificationMessage').textContent = message;
+      document.getElementById('notificationModal').classList.add('active');
+    }
+
     // Close modal when clicking outside
     document.addEventListener('click', (e) => {
       if (e.target.id === 'addModal' && e.target.classList.contains('active')) {
@@ -1354,7 +1380,7 @@
         list.innerHTML = '<div class="error">' + msg + '</div>';
       } else {
         console.error(msg);
-        alert('Error: ' + msg);
+        showNotification('Error', msg, 'error');
       }
     }
 
@@ -1549,7 +1575,7 @@
         await loadData();
         closeModal('perfModal');
       } catch (e) {
-        alert('Error: ' + e.message);
+        showNotification('Error', e.message, 'error');
       }
     }
 
@@ -1560,7 +1586,7 @@
         await loadData();
         closeModal('perfModal');
       } catch (e) {
-        alert('Error: ' + e.message);
+        showNotification('Error', e.message, 'error');
       }
     }
 
@@ -1719,12 +1745,12 @@
       const files = fileInput.files;
 
       if (!name.trim()) {
-        alert('Please enter a project name');
+        showNotification('Project Name Required', 'Please enter a project name', 'info');
         return;
       }
 
       if (files.length === 0) {
-        alert('Please select CSV files to upload');
+        showNotification('Files Required', 'Please select CSV files to upload', 'info');
         return;
       }
 
@@ -1761,7 +1787,7 @@
         closeModal('projectModal');
         document.getElementById('projectForm').reset();
 
-        alert('Project created! Now processing files...');
+        showNotification('Project Created', 'Now processing files...', 'processing');
 
         // Load projects and open the new one
         await loadProjects();
@@ -1802,11 +1828,11 @@
           // Refresh project list in background so status updates
           renderProjectsList();
 
-          alert('Report generated successfully!');
+          showNotification('Success', 'Report generated successfully!', 'success');
         }
       } catch (error) {
         console.error('Error:', error);
-        alert('Error: ' + error.message);
+        showNotification('Error', error.message, 'error');
       }
     }
 
@@ -1911,7 +1937,7 @@
       const files = fileInput.files;
 
       if (files.length === 0) {
-        alert('Please select CSV files to upload');
+        showNotification('Files Required', 'Please select CSV files to upload', 'info');
         return;
       }
 
@@ -1975,7 +2001,7 @@
           console.error('Failed to save error state:', saveError);
         }
 
-        alert('Error: ' + error.message);
+        showNotification('Error', error.message, 'error');
       }
     }
 
@@ -2142,7 +2168,7 @@
         await loadProjects();
         renderProjectsList();
       } catch (error) {
-        alert('Error deleting project: ' + error.message);
+        showNotification('Error', 'Error deleting project: ' + error.message, 'error');
         confirmBtn.disabled = false;
         confirmBtn.textContent = 'Delete Permanently';
       }
