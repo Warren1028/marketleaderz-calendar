@@ -77,9 +77,9 @@ NOW GENERATE THE COMPLETE FULL-LENGTH HTML REPORT:`;
 
     // Smart Gemini model fallback strategy (avoiding overloaded 3.8-flash)
     const models = [
-      'gemini-2.0-flash',      // Newest, less overloaded
-      'gemini-3.6-flash',      // Stable, less used than 3.8
-      'gemini-3.5-pro'         // Reliable fallback (slower but works)
+      'gemini-3-5-flash',      // Stable, proven general purpose
+      'gemini-3-6-flash',      // Newer, good performance/balance
+      'gemini-3-7-flash'       // Latest stable (before overloaded 3.8)
     ];
 
     console.log('\n=== Attempting Gemini Models ===');
