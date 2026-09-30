@@ -1571,6 +1571,13 @@
 
     function renderPerfList() {
       const list = document.getElementById('perfList');
+
+      // perfList element no longer exists - we now use projects-based dashboard
+      if (!list) {
+        console.log('Performance list element not found - using projects dashboard');
+        return;
+      }
+
       let filtered = [...perfData];
 
       if (perfFilterClient) filtered = filtered.filter(p => p.client === perfFilterClient);
