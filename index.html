@@ -425,6 +425,11 @@
               <input type="file" id="projFileInput" accept=".csv" multiple required style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
               <p style="font-size: 12px; color: #666; margin-top: 6px;">Upload 3 files: Campaigns, Ad Sets, Ads CSV</p>
             </div>
+            <div class="form-field">
+              <label>Ad Links</label>
+              <textarea id="proj_ad_links" placeholder="Paste ad URLs here (one per line)&#10;e.g., https://facebook.com/ads/..." style="min-height: 80px; font-family: monospace; font-size: 12px;"></textarea>
+              <p style="font-size: 12px; color: #666; margin-top: 6px;">Add links to your ads for deeper performance insights</p>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -1742,6 +1747,7 @@
       const name = document.getElementById('proj_name').value;
       const desc = document.getElementById('proj_desc').value;
       const client = document.getElementById('proj_client').value;
+      const adLinks = document.getElementById('proj_ad_links').value;
       const fileInput = document.getElementById('projFileInput');
       const files = fileInput.files;
 
@@ -1825,7 +1831,7 @@
 
           // Send to Gemini to analyze and generate HTML report
           console.log('About to call generateReportWithGemini with csvContent length:', csvContent.length);
-          const htmlReport = await generateReportWithGemini(currentProject.name, csvContent);
+          const htmlReport = await generateReportWithGemini(currentProject.name, csvContent, adLinks);
 
           // Save complete analysis metadata to Firestore
           const analysisData = {
@@ -2157,7 +2163,7 @@
     }
 
 
-    async function generateReportWithGemini(projectName, csvContent, retryCount = 0) {
+    async function generateReportWithGemini(projectName, csvContent, adLinks = '', retryCount = 0) {
       // Validate inputs
       if (typeof csvContent !== 'string' || csvContent.replace(/[\n\s=]/g, '').length === 0) {
         console.error('CSV validation failed');
@@ -2184,7 +2190,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             projectName: projectName,
-            csvContent: csvContent
+            csvContent: csvContent,
+            adLinks: adLinks
           }),
           signal: controller.signal
         });

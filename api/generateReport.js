@@ -7,12 +7,16 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { projectName, csvContent } = req.body;
+  const { projectName, csvContent, adLinks } = req.body;
 
   // Validate inputs
   if (!projectName || !csvContent) {
     return res.status(400).json({ error: 'Missing projectName or csvContent' });
   }
+
+  const adLinksSection = adLinks && adLinks.trim()
+    ? `\n\nAD LINKS PROVIDED (fetch and analyze these):\n${adLinks}`
+    : '';
 
   const prompt = `YOU ARE A MARKETING ANALYST. PARSE THIS CSV DATA AND GENERATE A PROFESSIONAL HTML REPORT.
 
@@ -25,9 +29,10 @@ MANDATORY STRUCTURE (IN THIS ORDER):
 4. "Are People Noticing the Ads?" / "Conversion Funnel" (h2): Show flow Impressions → Clicks → Landing Page Views → Conversions with percentages
 5. "Where the Budget Went" (h2): Top 5 items ranked by spend with horizontal bar charts
 6. "Top Performing Items" (h2): List best performers (by CPL or leads) with badges (green="Working Well", yellow="Watch")
-7. "Simple Scorecard" (h2): Three sections: ✓ Working Well, ⚠ Needs Attention, 🔄 Paused/Struggling
-8. "What We'll Do Next" (h2): 4-6 bullet points with actionable recommendations
-9. Footer: Citation of data source and date
+7. "Why It Worked" (h2): For top performing campaigns, explain WHY they succeeded - analyze the ads (if URLs provided), targeting, messaging, creative angle, timing, audience fit, or other success factors that connect to the metrics
+8. "Simple Scorecard" (h2): Three sections: ✓ Working Well, ⚠ Needs Attention, 🔄 Paused/Struggling
+9. "What We'll Do Next" (h2): 4-6 bullet points with actionable recommendations
+10. Footer: Citation of data source and date
 
 DESIGN (TRADER DEEKAY STYLE):
 - Use CSS variables for colors: --ink, --sub, --line, --bg, --card, --good, --warn, --watch, --accent
@@ -58,9 +63,18 @@ OUTPUT FORMAT:
 - COMPREHENSIVE: aim for 2500+ tokens of actual HTML content
 
 CSV Data to analyze:
-${csvContent}
+${csvContent}${adLinksSection}
 
 Project Name: ${projectName}
+
+IMPORTANT: If ad links are provided, fetch and analyze them to explain WHY the top performers worked. Look at:
+- Creative messaging and angle
+- Target audience alignment
+- Visual design and copywriting
+- Ad format and placement
+- Any unique selling propositions or offers
+
+Connect these creative insights back to the performance metrics (CTR, CPL, ROAS, etc.) to show causation.
 
 GENERATE THE REPORT NOW:`;
 
