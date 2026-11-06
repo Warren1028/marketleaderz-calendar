@@ -209,22 +209,29 @@
       <div style="background: #f9f3ff; padding: 20px; border-radius: 8px; border: 1px solid #e0d4f0; margin-bottom: 25px; display: flex; gap: 20px; flex-wrap: wrap;">
         <div>
           <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 8px; color: #6a25a0;">Filter by Client</label>
-          <select id="filterClient" onchange="applyFilters()" style="padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
-            <option value="">All Clients</option>
-            <option value="client_1">Market Leaders</option>
-            <option value="client_2">Maverick</option>
-            <option value="client_3">Dee Kay</option>
-            <option value="client_4">Nicholas</option>
-          </select>
+          <button id="filterClientBtn" class="crm-picker-btn" onclick="openModal('filterClientModal')">All Clients &#9662;</button>
         </div>
         <div>
           <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 8px; color: #6a25a0;">Filter by Status</label>
-          <select id="filterStatus" onchange="applyFilters()" style="padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
-            <option value="">All Status</option>
-            <option value="Scheduled">Scheduled</option>
-            <option value="Completed">Completed</option>
-            <option value="Cancelled">Cancelled</option>
-          </select>
+          <button id="filterStatusBtn" class="crm-picker-btn" onclick="openModal('filterStatusModal')">All Status &#9662;</button>
+        </div>
+        <div id="filterClientModal" class="modal" onclick="if (event.target === this) closeModal('filterClientModal')">
+          <div class="modal-box" style="max-width: 560px;">
+            <div class="modal-header">
+              <h2>Filter by Client</h2>
+              <button class="modal-close" onclick="closeModal('filterClientModal')">&times;</button>
+            </div>
+            <div id="filterClientGrid" class="crm-client-grid"></div>
+          </div>
+        </div>
+        <div id="filterStatusModal" class="modal" onclick="if (event.target === this) closeModal('filterStatusModal')">
+          <div class="modal-box" style="max-width: 560px;">
+            <div class="modal-header">
+              <h2>Filter by Status</h2>
+              <button class="modal-close" onclick="closeModal('filterStatusModal')">&times;</button>
+            </div>
+            <div id="filterStatusGrid" class="crm-client-grid"></div>
+          </div>
         </div>
       </div>
       <div class="events-list" id="eventsList"><div class="loading">Loading events...</div></div>
@@ -781,14 +788,20 @@
       client_1: { name: 'Market Leaders', color: '#9b59b6' },
       client_2: { name: 'Maverick', color: '#f1c40f' },
       client_3: { name: 'Dee Kay', color: '#d4c4a8' },
-      client_4: { name: 'Nicholas', color: '#1e3a5f' }
+      client_4: { name: 'Nicholas', color: '#1e3a5f' },
+      client_5: { name: 'Goodman Interior', color: '#2e86c1' },
+      client_6: { name: 'Linden', color: '#27ae60' },
+      client_7: { name: 'Reuben', color: '#e67e22' }
     };
 
     const CLIENT_CAMPAIGNS = {
       client_1: null, // Market Leaders - custom
       client_2: ['Raising Future Ready Teens'],
       client_3: ['1K a Day Webinar'],
-      client_4: ['Estate Planning Seminar', 'Dementia Talk', 'CPF Collab Talk']
+      client_4: ['Estate Planning Seminar', 'Dementia Talk', 'CPF Collab Talk'],
+      client_5: null, // Goodman Interior - custom
+      client_6: null, // Linden - custom
+      client_7: null  // Reuben - custom
     };
 
     const config = {
@@ -1104,9 +1117,46 @@
       }
     }
 
+    const STATUS_OPTIONS = [
+      { id: '', name: 'All Status', color: '#6a25a0' },
+      { id: 'Scheduled', name: 'Scheduled', color: '#3498db' },
+      { id: 'Completed', name: 'Completed', color: '#27ae60' },
+      { id: 'Cancelled', name: 'Cancelled', color: '#e74c3c' }
+    ];
+
+    function renderFilterPickers() {
+      const clientOpts = [{ id: '', name: 'All Clients', color: '#6a25a0' },
+        ...Object.keys(CLIENTS).map(id => ({ id, name: CLIENTS[id].name, color: CLIENTS[id].color }))];
+      document.getElementById('filterClientGrid').innerHTML = clientOpts.map(o => `
+        <div class="crm-client-card ${o.id === filterClient ? 'selected' : ''}" onclick="setClientFilter('${o.id}')">
+          <span class="crm-client-dot" style="background: ${o.color};"></span>
+          <span class="crm-client-name">${o.name}</span>
+        </div>`).join('');
+      document.getElementById('filterStatusGrid').innerHTML = STATUS_OPTIONS.map(o => `
+        <div class="crm-client-card ${o.id === filterStatus ? 'selected' : ''}" onclick="setStatusFilter('${o.id}')">
+          <span class="crm-client-dot" style="background: ${o.color};"></span>
+          <span class="crm-client-name">${o.name}</span>
+        </div>`).join('');
+      const curClient = clientOpts.find(o => o.id === filterClient);
+      const curStatus = STATUS_OPTIONS.find(o => o.id === filterStatus);
+      document.getElementById('filterClientBtn').innerHTML = `${curClient.name} &#9662;`;
+      document.getElementById('filterStatusBtn').innerHTML = `${curStatus.name} &#9662;`;
+    }
+
+    function setClientFilter(id) {
+      filterClient = id;
+      closeModal('filterClientModal');
+      applyFilters();
+    }
+
+    function setStatusFilter(id) {
+      filterStatus = id;
+      closeModal('filterStatusModal');
+      applyFilters();
+    }
+
     function applyFilters() {
-      filterClient = document.getElementById('filterClient').value;
-      filterStatus = document.getElementById('filterStatus').value;
+      renderFilterPickers();
       renderList();
     }
 
@@ -1397,15 +1447,7 @@
       client_7: 'https://docs.google.com/spreadsheets/d/1MtIcQVFH6H3Qkc_iD9_5RiOftuXZ2QJKysvzuLHoWl8/edit?gid=228519116#gid=228519116' // Reuben
     };
 
-    const CRM_CLIENTS = [
-      { id: 'client_1', name: 'Market Leaders', color: '#9b59b6' },
-      { id: 'client_2', name: 'Maverick', color: '#f1c40f' },
-      { id: 'client_3', name: 'Dee Kay', color: '#d4c4a8' },
-      { id: 'client_4', name: 'Nicholas', color: '#1e3a5f' },
-      { id: 'client_5', name: 'Goodman Interior', color: '#2e86c1' },
-      { id: 'client_6', name: 'Linden', color: '#27ae60' },
-      { id: 'client_7', name: 'Reuben', color: '#e67e22' }
-    ];
+    const CRM_CLIENTS = Object.keys(CLIENTS).map(id => ({ id, ...CLIENTS[id] }));
     let crmSelectedClient = 'client_1';
 
     function renderCrmPicker() {
