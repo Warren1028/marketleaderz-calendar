@@ -221,12 +221,15 @@
     <div id="crm-section" class="section">
       <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;">
         <h2 style="margin: 0;">CRM</h2>
-        <select id="crmClient" onchange="renderCrmSheet()" style="padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
-          <option value="client_1">Market Leaders</option>
-          <option value="client_2">Maverick</option>
-          <option value="client_3">Dee Kay</option>
-          <option value="client_4">Nicholas</option>
-        </select>
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+          <select id="crmClient" onchange="renderCrmSheet()" style="padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+            <option value="client_1">Market Leaders</option>
+            <option value="client_2">Maverick</option>
+            <option value="client_3">Dee Kay</option>
+            <option value="client_4">Nicholas</option>
+          </select>
+          <a id="crmEditLink" class="btn" href="#" target="_blank" rel="noopener" style="text-decoration: none; display: none;">Open in Google Sheets to edit</a>
+        </div>
       </div>
       <div id="crmSheetWrap"></div>
     </div>
@@ -1310,9 +1313,25 @@
       client_4: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTqw1vpq0oYPKVc22fT1j8kSF2kIiEHErp6qxiDJ-gkfz74gipVRohyBeIdJTmhK-7DVgvLuMtp5eZo/pubhtml?widget=true&headers=false'  // Nicholas
     };
 
+    // Editable Google Sheets links (opened in a new tab for editing)
+    const CRM_EDIT_LINKS = {
+      client_1: 'https://docs.google.com/spreadsheets/u/1/d/18wBE4MbFGxahKw7fhrp6I8cGg2_UDk4gSqLiQbDDZZs/edit', // Market Leaders
+      client_2: 'https://docs.google.com/spreadsheets/d/1Ic0ete46c39Dx4KoMvbRQp4BBaR1JnGA8Xf88iUsP-w/edit?gid=0#gid=0', // Maverick
+      client_3: 'https://docs.google.com/spreadsheets/d/1aWP9MuRGe4RqxmV05xZ9SFrL6qKo6Oyo3MZzUWYWWYk/edit?gid=1118670567#gid=1118670567', // Dee Kay
+      client_4: 'https://docs.google.com/spreadsheets/d/1nBpXTOZZePTRacr7mrsoY_iDCwdWXA1xO0jhhaLWC54/edit?gid=119829413#gid=119829413'  // Nicholas
+    };
+
     function renderCrmSheet() {
       const wrap = document.getElementById('crmSheetWrap');
       const clientId = document.getElementById('crmClient').value;
+      const editLink = document.getElementById('crmEditLink');
+      const editUrl = CRM_EDIT_LINKS[clientId];
+      if (editUrl) {
+        editLink.href = editUrl;
+        editLink.style.display = 'inline-block';
+      } else {
+        editLink.style.display = 'none';
+      }
       const url = CRM_SHEETS[clientId];
       if (!url) {
         wrap.innerHTML = '<div class="empty">CRM sheet not connected yet for this client.</div>';
@@ -1322,7 +1341,7 @@
       const iframe = document.createElement('iframe');
       iframe.src = url;
       iframe.title = 'CRM sheet';
-      iframe.style.cssText = 'width: 100%; height: 75vh; border: 1px solid #e0e0e0; border-radius: 6px;';
+      iframe.style.cssText = 'width: 100%; height: calc(100vh - 200px); min-height: 700px; border: 1px solid #e0e0e0; border-radius: 6px;';
       wrap.appendChild(iframe);
     }
 
