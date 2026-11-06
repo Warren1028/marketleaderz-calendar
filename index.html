@@ -110,6 +110,64 @@
     .agenda-event-title { font-weight: 600; margin-bottom: 4px; }
     .agenda-event-info { color: #666; font-size: 11px; display: flex; gap: 8px; flex-wrap: wrap; }
     .agenda-event-client { font-weight: 600; }
+
+    /* ===== Glassmorphism theme ===== */
+    :root {
+      --glass-bg: rgba(255, 255, 255, 0.55);
+      --glass-bg-strong: rgba(255, 255, 255, 0.72);
+      --glass-border: rgba(255, 255, 255, 0.7);
+      --glass-shadow: 0 8px 32px rgba(74, 28, 110, 0.12);
+      --glass-blur: blur(16px) saturate(160%);
+    }
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(155, 89, 182, 0.35), transparent 40%),
+        radial-gradient(circle at 70% 85%, rgba(106, 37, 160, 0.30), transparent 45%),
+        radial-gradient(circle at 10% 90%, rgba(30, 58, 95, 0.25), transparent 40%),
+        linear-gradient(135deg, #efe6fb 0%, #f7f2fd 50%, #e4d6f5 100%);
+      background-attachment: fixed;
+    }
+    .header, .tabs, .section, .modal-box, .agenda-sidebar {
+      background: var(--glass-bg);
+      -webkit-backdrop-filter: var(--glass-blur);
+      backdrop-filter: var(--glass-blur);
+      border-color: var(--glass-border);
+      box-shadow: var(--glass-shadow);
+    }
+    .header { border-bottom: 1px solid var(--glass-border); }
+    .tabs { border-bottom: 1px solid var(--glass-border); }
+    .section { border: 1px solid var(--glass-border); }
+    .agenda-sidebar { border-left: 1px solid var(--glass-border); }
+    .modal { background: rgba(40, 20, 60, 0.25); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+    .modal-box { background: var(--glass-bg-strong); }
+    .modal-header, .modal-footer { border-color: rgba(106, 37, 160, 0.12); }
+    .modal-footer { background: rgba(255, 255, 255, 0.35); }
+
+    .day { background: var(--glass-bg); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border-color: var(--glass-border); }
+    .day.other { background: rgba(255, 255, 255, 0.25); }
+    .nav-btn { background: var(--glass-bg); border-color: var(--glass-border); }
+    .nav-btn:hover { background: var(--glass-bg-strong); }
+    .events-table tr:nth-child(odd) { background: rgba(249, 243, 255, 0.6); }
+    .events-table tr:nth-child(even) { background: rgba(255, 255, 255, 0.35); }
+    .events-table tr:hover { background: rgba(240, 230, 255, 0.85); }
+    .events-table th { background: rgba(106, 37, 160, 0.9); }
+
+    .form-field input, .form-field select, .form-field textarea { background: rgba(255, 255, 255, 0.7); border-color: rgba(106, 37, 160, 0.2); }
+    .form-field input:focus, .form-field select:focus, .form-field textarea:focus { background: rgba(255, 255, 255, 0.95); }
+
+    .crm-client-card { background: var(--glass-bg); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border-color: var(--glass-border); }
+    .crm-client-card:hover, .crm-client-card.selected { background: rgba(255, 255, 255, 0.8); border-color: #6a25a0; }
+    .crm-sheet-link { background: var(--glass-bg); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
+
+    /* Inline-styled panels on the Performance Dashboard */
+    div[style*="background: white"], div[style*="background:white"] {
+      background: var(--glass-bg) !important;
+      -webkit-backdrop-filter: var(--glass-blur);
+      backdrop-filter: var(--glass-blur);
+    }
+    div[style*="background: #f9f3ff"] { background: rgba(249, 243, 255, 0.55) !important; }
+    div[style*="background: #f5f5f5"] { background: rgba(245, 245, 245, 0.45) !important; }
   </style>
 </head>
 <body>
