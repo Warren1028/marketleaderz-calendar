@@ -117,9 +117,13 @@
     <div class="tab active" onclick="switchTab('calendar')">Event Calendar</div>
     <div class="tab" onclick="switchTab('events')">All Events</div>
     <div class="tab" onclick="switchTab('performance')">Performance Dashboard</div>
+    <div class="tab" onclick="switchTab('crm')">CRM</div>
+    <!-- Hidden for now: Top Priorities, Campaign Assets, Ad Account Stats
     <div class="tab" onclick="switchTab('priorities')">Top Priorities</div>
     <div class="tab" onclick="switchTab('campaign')">Campaign Assets</div>
     <div class="tab" onclick="switchTab('adstats')">Ad Account Stats</div>
+    -->
+
   </div>
 
   <div class="main">
@@ -214,6 +218,20 @@
       </div>
     </div>
 
+    <div id="crm-section" class="section">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;">
+        <h2 style="margin: 0;">CRM</h2>
+        <select id="crmClient" onchange="renderCrmSheet()" style="padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+          <option value="client_1">Market Leaders</option>
+          <option value="client_2">Maverick</option>
+          <option value="client_3">Dee Kay</option>
+          <option value="client_4">Nicholas</option>
+        </select>
+      </div>
+      <div id="crmSheetWrap"></div>
+    </div>
+
+    <!-- Hidden for now
     <div id="priorities-section" class="section">
       <h2>Top Priorities</h2>
       <div class="empty">Coming Soon</div>
@@ -228,6 +246,7 @@
       <h2>Ad Account Stats</h2>
       <div class="empty">Coming Soon</div>
     </div>
+    -->
   </div>
 
   <div id="addModal" class="modal">
@@ -1281,12 +1300,40 @@
       }
     }
 
+    // Published embed URLs for each client's CRM sheet.
+    // In Google Sheets: File > Share > Publish to web > Embed > copy the src URL
+    // (it ends in /pubhtml?widget=true&headers=false). Leave blank if not set up yet.
+    const CRM_SHEETS = {
+      client_1: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTyw821zSu2vMDwaG31GVzsK5gqgBlpXEH6Q7rWizYkb_2f6tXcs3OUhQ176KXnQomid7QVXOO0DX9L/pubhtml?widget=true&headers=false', // Market Leaders
+      client_2: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTApkXQ_UvnY1WQCSw3kMdvk9VEdETayPzRYmPEZxOKwliaiRYBy2Y8L1LTwiyGkgWTCbq8D0-tEpnm/pubhtml?widget=true&headers=false', // Maverick
+      client_3: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTNioAwcuQdPpNvREY_NF9eOaZUi2UpZlQ1QWfoSpD2eIog_yEPT7rI3CbXZd1Pv2CMVlc7cbRFxwis/pubhtml?widget=true&headers=false', // Dee Kay
+      client_4: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTqw1vpq0oYPKVc22fT1j8kSF2kIiEHErp6qxiDJ-gkfz74gipVRohyBeIdJTmhK-7DVgvLuMtp5eZo/pubhtml?widget=true&headers=false'  // Nicholas
+    };
+
+    function renderCrmSheet() {
+      const wrap = document.getElementById('crmSheetWrap');
+      const clientId = document.getElementById('crmClient').value;
+      const url = CRM_SHEETS[clientId];
+      if (!url) {
+        wrap.innerHTML = '<div class="empty">CRM sheet not connected yet for this client.</div>';
+        return;
+      }
+      wrap.innerHTML = '';
+      const iframe = document.createElement('iframe');
+      iframe.src = url;
+      iframe.title = 'CRM sheet';
+      iframe.style.cssText = 'width: 100%; height: 75vh; border: 1px solid #e0e0e0; border-radius: 6px;';
+      wrap.appendChild(iframe);
+    }
+
     function switchTab(tab) {
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
 
       document.getElementById(tab + '-section').classList.add('active');
       event.target.classList.add('active');
+
+      if (tab === 'crm') renderCrmSheet();
 
       // Show/hide Add Event button
       const addBtn = document.getElementById('addEventBtn');
