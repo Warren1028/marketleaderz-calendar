@@ -215,24 +215,6 @@
           <label style="font-size: 12px; font-weight: 700; display: block; margin-bottom: 8px; color: #6a25a0;">Filter by Status</label>
           <button id="filterStatusBtn" class="crm-picker-btn" onclick="openModal('filterStatusModal')">All Status &#9662;</button>
         </div>
-        <div id="filterClientModal" class="modal" onclick="if (event.target === this) closeModal('filterClientModal')">
-          <div class="modal-box" style="max-width: 560px;">
-            <div class="modal-header">
-              <h2>Filter by Client</h2>
-              <button class="modal-close" onclick="closeModal('filterClientModal')">&times;</button>
-            </div>
-            <div id="filterClientGrid" class="crm-client-grid"></div>
-          </div>
-        </div>
-        <div id="filterStatusModal" class="modal" onclick="if (event.target === this) closeModal('filterStatusModal')">
-          <div class="modal-box" style="max-width: 560px;">
-            <div class="modal-header">
-              <h2>Filter by Status</h2>
-              <button class="modal-close" onclick="closeModal('filterStatusModal')">&times;</button>
-            </div>
-            <div id="filterStatusGrid" class="crm-client-grid"></div>
-          </div>
-        </div>
       </div>
       <div class="events-list" id="eventsList"><div class="loading">Loading events...</div></div>
     </div>
@@ -327,6 +309,26 @@
       <div class="empty">Coming Soon</div>
     </div>
     -->
+  </div>
+
+  <div id="filterClientModal" class="modal" onclick="if (event.target === this) closeModal('filterClientModal')">
+    <div class="modal-box" style="max-width: 560px;">
+      <div class="modal-header">
+        <h2>Filter by Client</h2>
+        <button class="modal-close" onclick="closeModal('filterClientModal')">&times;</button>
+      </div>
+      <div id="filterClientGrid" class="crm-client-grid"></div>
+    </div>
+  </div>
+
+  <div id="filterStatusModal" class="modal" onclick="if (event.target === this) closeModal('filterStatusModal')">
+    <div class="modal-box" style="max-width: 560px;">
+      <div class="modal-header">
+        <h2>Filter by Status</h2>
+        <button class="modal-close" onclick="closeModal('filterStatusModal')">&times;</button>
+      </div>
+      <div id="filterStatusGrid" class="crm-client-grid"></div>
+    </div>
   </div>
 
   <div id="addModal" class="modal">
