@@ -926,6 +926,7 @@
     }
 
     function initUI() {
+      renderFilterPickers();
       const sel = document.getElementById('f_client');
       sel.innerHTML = '<option value="">Select</option>';
       for (const id in CLIENTS) {
