@@ -61,6 +61,16 @@
     .form-links-section { background: #f5f5f5; border-top: 1px solid #e0e0e0; padding: 20px 25px; }
     .form-links-title { font-size: 13px; font-weight: 600; margin-bottom: 15px; color: #6a25a0; }
     .form-links-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .crm-picker-btn { background: #6a25a0; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .crm-picker-btn:hover { background: #5a1a90; }
+    .crm-sheet-link { font-size: 13px; color: #6a25a0; border: 1px solid #6a25a0; border-radius: 6px; padding: 8px 14px; text-decoration: none; font-weight: 600; }
+    .crm-sheet-link:hover { background: #f9f3ff; }
+    .crm-client-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 25px; }
+    .crm-client-card { border: 2px solid #e0e0e0; border-radius: 10px; padding: 20px; cursor: pointer; display: flex; align-items: center; gap: 14px; background: white; transition: all 0.2s; }
+    .crm-client-card:hover, .crm-client-card.selected { border-color: #6a25a0; background: #f9f3ff; }
+    .crm-client-dot { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.15); }
+    .crm-client-name { font-size: 16px; font-weight: 600; color: #333333; }
+    @media (max-width: 600px) { .crm-client-grid { grid-template-columns: 1fr; } }
     .modal-footer { display: flex; gap: 12px; padding: 25px; border-top: 1px solid #e0e0e0; background: #f5f5f5; }
     .btn-primary { background: #6a25a0; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; flex: 1; }
     .btn-primary:hover { background: #5a1a90; }
@@ -220,18 +230,20 @@
 
     <div id="crm-section" class="section">
       <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;">
-        <h2 style="margin: 0;">CRM</h2>
-        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-          <select id="crmClient" onchange="renderCrmSheet()" style="padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
-            <option value="client_1">Market Leaders</option>
-            <option value="client_2">Maverick</option>
-            <option value="client_3">Dee Kay</option>
-            <option value="client_4">Nicholas</option>
-          </select>
-          <a id="crmEditLink" class="btn" href="#" target="_blank" rel="noopener" style="text-decoration: none; display: none;">Open in Google Sheets to edit</a>
-        </div>
+        <button id="crmPickerBtn" class="crm-picker-btn" onclick="openModal('crmPickModal')">Market Leaders &#9662;</button>
+        <a id="crmEditLink" class="crm-sheet-link" href="#" target="_blank" rel="noopener" style="display: none;">Google Sheet Link</a>
       </div>
       <div id="crmSheetWrap"></div>
+    </div>
+
+    <div id="crmPickModal" class="modal" onclick="if (event.target === this) closeModal('crmPickModal')">
+      <div class="modal-box" style="max-width: 560px;">
+        <div class="modal-header">
+          <h2>Choose a Client</h2>
+          <button class="modal-close" onclick="closeModal('crmPickModal')">&times;</button>
+        </div>
+        <div id="crmClientGrid" class="crm-client-grid"></div>
+      </div>
     </div>
 
     <!-- Hidden for now
@@ -1321,10 +1333,36 @@
       client_4: 'https://docs.google.com/spreadsheets/d/1nBpXTOZZePTRacr7mrsoY_iDCwdWXA1xO0jhhaLWC54/edit?gid=119829413#gid=119829413'  // Nicholas
     };
 
+    const CRM_CLIENTS = [
+      { id: 'client_1', name: 'Market Leaders', color: '#9b59b6' },
+      { id: 'client_2', name: 'Maverick', color: '#f1c40f' },
+      { id: 'client_3', name: 'Dee Kay', color: '#d4c4a8' },
+      { id: 'client_4', name: 'Nicholas', color: '#1e3a5f' }
+    ];
+    let crmSelectedClient = 'client_1';
+
+    function renderCrmPicker() {
+      const grid = document.getElementById('crmClientGrid');
+      grid.innerHTML = CRM_CLIENTS.map(c => `
+        <div class="crm-client-card ${c.id === crmSelectedClient ? 'selected' : ''}" onclick="selectCrmClient('${c.id}')">
+          <span class="crm-client-dot" style="background: ${c.color};"></span>
+          <span class="crm-client-name">${c.name}</span>
+        </div>`).join('');
+      const current = CRM_CLIENTS.find(c => c.id === crmSelectedClient);
+      document.getElementById('crmPickerBtn').innerHTML = `${current.name} &#9662;`;
+    }
+
+    function selectCrmClient(id) {
+      crmSelectedClient = id;
+      closeModal('crmPickModal');
+      renderCrmSheet();
+    }
+
     function renderCrmSheet() {
       const wrap = document.getElementById('crmSheetWrap');
-      const clientId = document.getElementById('crmClient').value;
+      const clientId = crmSelectedClient;
       const editLink = document.getElementById('crmEditLink');
+      renderCrmPicker();
       const editUrl = CRM_EDIT_LINKS[clientId];
       if (editUrl) {
         editLink.href = editUrl;
